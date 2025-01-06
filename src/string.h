@@ -17,5 +17,6 @@ size_t strlen(const char* str);
 int strcmp(const char* s1, const char* s2);
 char* strchr(const char* str, char c);
 char* strcpy(char* dest, const char* src);
+int strncmp(const char* str1, const char* str2, size_t n);
 
 #endif // STRING_H

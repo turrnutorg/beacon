@@ -24,6 +24,19 @@ int command_history_index = 0;     // Index to store the next command
 int current_history_index = -1;    // Index for navigating history
 
 /**
+ * Converts a string to lowercase.
+ */
+void to_lowercase(char* str) {
+    while (*str) {
+        if (*str >= 'A' && *str <= 'Z') {
+            *str += ('a' - 'A');
+        }
+        str++;
+    }
+}
+
+
+/**
  * Parses the input command into the base command and its arguments.
  */
 int parse_command(const char* command, char* cmd, char args[MAX_ARGS][INPUT_BUFFER_SIZE]) {
@@ -39,19 +52,24 @@ int parse_command(const char* command, char* cmd, char args[MAX_ARGS][INPUT_BUFF
         token = next_space + 1;
     } else {
         strcpy(cmd, token);
+        to_lowercase(cmd);
         return 0; // No arguments
     }
+
+    to_lowercase(cmd);
 
     // Extract arguments
     while ((next_space = strchr(token, ' ')) != NULL && arg_count < MAX_ARGS) {
         strncpy(args[arg_count], token, next_space - token);
         args[arg_count][next_space - token] = '\0';
         token = next_space + 1;
+        to_lowercase(args[arg_count]);
         arg_count++;
     }
 
     if (*token != '\0' && arg_count < MAX_ARGS) {
         strcpy(args[arg_count], token);
+        to_lowercase(args[arg_count]);
         arg_count++;
     }
 
@@ -92,6 +110,8 @@ void process_command(const char* command) {
     char cmd[INPUT_BUFFER_SIZE] = {0};
     char args[MAX_ARGS][INPUT_BUFFER_SIZE] = {{0}};
     int arg_count = parse_command(command, cmd, args);
+
+    to_lowercase(cmd);
 
     if (strcmp(cmd, "test") == 0) {
         if (arg_count > 0) {
