@@ -22,5 +22,4 @@ void move_cursor_back();
 void delay_ms(int milliseconds);
 void reboot();
 
-
 #endif // OS_H

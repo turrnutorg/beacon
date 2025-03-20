@@ -9,7 +9,7 @@
  #include "command.h"
  #include "console.h"
  #include "screen.h"
- #include "os.h"          // For delay_ms and reboot functions
+ #include "os.h"
  #include "stdtypes.h"
  #include "string.h"
  #include <stdint.h>
@@ -28,7 +28,40 @@
  int command_history_index = 0;     // Index to store the next command
  int current_history_index = -1;    // Index for navigating history
  
- int macos = 0; // macos mode
+int rainbow_running = 0; // 0 means stopped, 1 means running
+int rainbow_mode = 0; // 0 for both, 1 for text, 2 for background
+unsigned long last_rainbow_update = 0; // For timing the updates
+
+void update_rainbow() {
+    // while (rainbow_running == 1) {
+        if (!rainbow_running) return;  // Do nothing if rainbow isn't running
+
+        for (int i = 1; i <= 15; i++) {  // Colors from 1 to 15, skipping black
+            if (!rainbow_running) break; // If stopped, exit the loop
+
+            uint8_t fg = i; 
+            uint8_t bg = (rainbow_mode == 2 || rainbow_mode == 0) ? i : 0; // Cycle bg if it's "background" or "both"
+            
+            if (rainbow_mode == 1 || rainbow_mode == 0) {
+                repaint_screen(fg, bg);  // Update text and background
+            }
+
+            if (rainbow_mode == 0) {
+                repaint_screen(fg, bg);  // Update both
+            }
+
+            if (rainbow_mode == 2) {
+                repaint_screen(0, bg);  // Update only background
+            }
+
+            delay_ms(100); // Speed of color change (adjustable)
+        }
+    }
+//}
+
+
+
+int macos = 0; // macos mode
 
  /**
   * Converts a string to lowercase.
@@ -230,9 +263,32 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
      } else if (strcmp(cmd, "reset") == 0) {
         println("Resetting the screen...");
         delay_ms(1000);
+        rainbow_running = 0;
         start();
 
-     } else if (strcmp(cmd, "shutdown") == 0) {
+     } else if (strcmp(cmd, "rainbow") == 0) {
+        if (arg_count == 0) {
+            println("Usage: rainbow [text|background|both]");
+        } else {
+            if (strcmp(args[0], "text") == 0) {
+                rainbow_mode = 1; // Text rainbow
+                println("Starting rainbow text...");
+            } else if (strcmp(args[0], "background") == 0) {
+                rainbow_mode = 2; // Background rainbow
+                println("Starting rainbow background...");
+            } else if (strcmp(args[0], "both") == 0) {
+                rainbow_mode = 0; // Both text and background rainbow
+                println("Starting rainbow text and background...");
+            } else {
+                println("Invalid option. Usage: rainbow [text|background|both]");
+                rainbow_mode = 0;
+                return;
+            }
+            rainbow_running = 1; // Start rainbow cycling
+        }
+    }
+
+     else if (strcmp(cmd, "shutdown") == 0) {
          println("Shutting down the system...");
          delay_ms(1000);
          shutdown();
@@ -240,27 +296,27 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
      } else if (strcmp(cmd, "color") == 0) {
         if (arg_count != 2) {
             println("Usage: color <text color> <background color>");
-            return;
+        } else {
+            int fg = atoi(args[0]);
+            int bg = atoi(args[1]);
+    
+            if (fg < 0 || fg > 15 || bg < 0 || bg > 15) {
+                println("Color values must be between 0 and 15.");
+            }
+                else {
+    
+                uint8_t color = (bg << 4) | fg;
+    
+                // set the default color for future prints
+                set_color(fg, bg);
+    
+                // repaint the entire screen
+                repaint_screen(fg, bg);
+    
+                // feedback, optional
+                println("Colors updated. Try not to blind yourself.");
+                }
         }
-    
-        int fg = atoi(args[0]);
-        int bg = atoi(args[1]);
-    
-        if (fg < 0 || fg > 15 || bg < 0 || bg > 15) {
-            println("Color values must be between 0 and 15.");
-            return;
-        }
-    
-        uint8_t color = (bg << 4) | fg;
-    
-        // set the default color for future prints
-        set_color(fg, bg);
-    
-        // repaint the entire screen
-        repaint_screen(fg, bg);
-    
-        // feedback, optional
-        println("Colors updated. Try not to blind yourself.");
     } else if (strcmp(cmd, "hello") == 0) {
         println("World!");
 
@@ -337,7 +393,6 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
          print(cmd);
          println("\" is not a known command or executable program.");
      }
- 
      newRowAfterCommand();
  }
  

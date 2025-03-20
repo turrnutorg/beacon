@@ -16,6 +16,10 @@
 #define COMMAND_HISTORY_SIZE 5
 #define MAX_ARGS 10
 
+extern int rainbow_running;
+extern int rainbow_mode;
+extern unsigned long last_rainbow_update;
+
 // Function Declarations
 
 void shutdown();
@@ -40,5 +44,6 @@ void process_command(const char* command);
 void set_rtc_date(uint8_t day, uint8_t month, uint8_t year);
 void set_rtc_time(uint8_t hour, uint8_t minute, uint8_t second);
 void repaint_screen(uint8_t fg_color, uint8_t bg_color);
+void update_rainbow();
 
 #endif // COMMAND_H

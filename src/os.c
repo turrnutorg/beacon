@@ -277,6 +277,7 @@ void display_datetime() {
             loop_counter = 0;
         }
         }
+        update_rainbow();
     }
 }
 
