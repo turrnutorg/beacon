@@ -77,6 +77,7 @@
 
                 // Move to time setup
                 setup_mode = 2;
+                curs_row++;
                 println("Enter current time (HH MM SS):");
                 input_len = strlen("settime ");
                 strncpy(input_buffer, "settime ", INPUT_BUFFER_SIZE);

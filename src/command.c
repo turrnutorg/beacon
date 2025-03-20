@@ -320,7 +320,36 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
     } else if (strcmp(cmd, "hello") == 0) {
         println("World!");
 
-     } else if (strcmp(cmd, "macos") == 0) {
+    } else if (strcmp(cmd, "poem") == 0) {
+        retain_clock = 0;
+        // Clear the screen
+        clear_screen();
+        row = 0;
+        col = 0;
+        curs_row = 0;
+        curs_col = 0;
+    
+        // Display the poem
+        println("life is like a door");
+        println("never trust a cat");
+        println("because the moon can't swim\n");
+        println("but they live in your house");
+        println("even though they don't like breathing in");
+        println("dead oxygen that's out of warranty\n");
+        println("when the gods turn to glass");
+        println("you'll be drinking lager out of urns");
+        println("and eating peanut butter with mud\n");
+        println("bananas wear socks in the basement");
+        println("because time can't tie its own shoes");
+        println("and the dead spiders are unionizing\n");
+        println("and a microwave is just a haunted suitcase");
+        println("henceforth gravity owes me twenty bucks");
+        println("because the couch is plotting against the fridge\n");
+        println("when pickles dream in binary");
+        println("the mountain dew solidifies");
+        println("into a 2007 toyota corolla\n");
+        curs_row += 21;
+    } else if (strcmp(cmd, "macos") == 0) {
         if (macos == 1) {
             set_color(GREEN_COLOR, WHITE_COLOR);
             repaint_screen(GREEN_COLOR, WHITE_COLOR);
