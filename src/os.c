@@ -53,6 +53,42 @@
  }
  
  void run_initial_setup() {
+    println("Do you want to run the initial setup? [Just Date & Time] (Y/n):");
+    curs_row++;
+    update_cursor();
+
+    // Wait for keypress
+    char response = '\0';
+    while (response == '\0') {
+        if (inb(0x64) & 0x01) {
+            uint8_t scancode = inb(0x60);
+            handle_keypress(scancode);
+            response = scancode_to_ascii(scancode);
+        }
+    }
+
+    // If user presses 'n' or 'N', skip setup
+    if (response == 'n' || response == 'N') {
+        println("Skipping initial setup.");
+        curs_row++;
+        input_len = 0;
+        retain_clock = 1;
+        update_cursor();
+        setup_ran = 1;
+        setup_mode = 0;
+        delay_ms(500);
+        clear_screen();
+        return;
+    }
+
+    input_len = 0;
+
+    setup_ran = 0;
+
+    clear_screen();
+    row = 0;
+    col = 0;
+
     setup_mode = 1;  // DATE SETUP
 
     println("Enter current date (DD MM YY):");
@@ -60,7 +96,7 @@
     strncpy(input_buffer, "setdate ", INPUT_BUFFER_SIZE);
     move_cursor_back();
     curs_col = 0;
-    curs_row = 3;
+    curs_row = 1;
     update_cursor();
 
     // Loop until date entry is done
@@ -105,11 +141,13 @@
             }
         }
     }
+
     setup_ran = 1;
     setup_mode = 0;
     delay_ms(500);
     clear_screen();
 }
+
 
 
  
@@ -239,6 +277,10 @@ void display_datetime() {
     repaint_screen(GREEN_COLOR, WHITE_COLOR);
 
     enable_cursor(0, 15);
+
+    if (setup_ran == 0) {
+        run_initial_setup();
+    }
 
     col = 0;
     row = 0;

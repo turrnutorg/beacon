@@ -381,16 +381,22 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
             update_cursor();
 
      } else if (strcmp(cmd, "settime") == 0) {
-        if (arg_count != 3) {
-            println("Usage: settime <hour> <minute> <second>");
+        if (arg_count != 3 && setup_ran == 1) {
+            println("Usage: settime <hour (24h time)> <minute> <second>");
+        } else if (arg_count != 3 && setup_ran == 0) {
+            curs_row += 1;
+            update_cursor();
+            return;
         } else {
             int hour = atoi(args[0]);
              int minute = atoi(args[1]);
              int second = atoi(args[2]);
  
-             if (hour < 0 || hour > 23 || minute < 0 || minute > 59 || second < 0 || second > 59) {
+             if (hour < 0 || hour > 23 || minute < 0 || minute > 59 || second < 0 || second > 59 && setup_ran == 1) {
                  println("Invalid time values. Use 24-hour format, dumbass.");
-             } else {
+             } else if (hour < 0 || hour > 23 || minute < 0 || minute > 59 || second < 0 || second > 59 && setup_ran == 0) {
+                return;
+             }  else {
                  set_rtc_time((uint8_t)hour, (uint8_t)minute, (uint8_t)second);
                  if (setup_mode == 0) {
                  println("RTC time updated. If it's wrong, that's on you.");
@@ -398,15 +404,21 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
              }
          }
      } else if (strcmp(cmd, "setdate") == 0) {
-        if (arg_count != 3) {
+        if (arg_count != 3 && setup_ran == 1) {
             println("Usage: setdate <day(DD)> <month(MM)> <year(YY)>");
+        } else if (arg_count != 3 && setup_ran == 0) {
+            curs_row += 1;
+            update_cursor();
+            return;
         } else {
             int day = atoi(args[0]);
             int month = atoi(args[1]);
             int year = atoi(args[2]) % 100; // CMOS stores last two digits
     
-            if (day < 1 || day > 31 || month < 1 || month > 12 || year < 0 || year > 99) {
+            if (day < 1 || day > 31 || month < 1 || month > 12 || year < 0 || year > 99 && setup_ran == 1) {
                 println("Invalid date values, ya donkey.");
+            } if (day < 1 || day > 31 || month < 1 || month > 12 || year < 0 || year > 99 && setup_ran == 0) {
+                return;
             } else {
                 set_rtc_date((uint8_t)day, (uint8_t)month, (uint8_t)year);
                 if (setup_mode == 0) {
