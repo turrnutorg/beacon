@@ -241,7 +241,7 @@ void display_datetime() {
     enable_cursor(0, 15);
 
     if (setup_ran == 0) {
-    println("The Beacon Operating System. (v6.22 :P)");
+    println("The Beacon Operating System. Starting initial setup...");
     println("Copyright (c) 2025 Turrnut Open Source Organization.");
 
     run_initial_setup();  // <<<<<< all the dumb shit is in here now

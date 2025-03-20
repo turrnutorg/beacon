@@ -251,7 +251,8 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
          row = 0;
          col = 0;
          retain_clock = 0;
-         println("");
+         println("Beacon Operating System. (C) 2025 Turrnut Open Source Organization.");
+         println("Type a command (type 'help' for a list):");
          update_cursor();
  
      } else if (strcmp(cmd, "reboot") == 0) {
@@ -366,14 +367,14 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
          println("Available commands:");
          println("test [argument] - Test command with optional argument.");
          println("echo [text] - Echo the text back to the console.");
-         println("clear - Clear the screen.");
+         println("clear - Clear the screen (does not clear visual effects).");
          println("reboot - Reboot the system.");
          println("shutdown - Shutdown the system.");
          println("hello - Print 'World!'.");
          println("help - Display this help message.");
          println("settime [hour] [minute] [second] - Set the RTC time.");
          println("setdate [day] [month] [year] - Set the RTC date.");
-         println("reset - Reset the screen.");
+         println("reset - Reset the screen to default.");
          println("color [text color] [background color] - Change text and background colors.");
          curs_row += 11;
             update_cursor();
