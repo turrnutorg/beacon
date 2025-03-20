@@ -12,6 +12,8 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdarg.h>
+
 
 extern size_t col;  // Declare external variables
 extern size_t row;
@@ -41,6 +43,7 @@ void newline();
 void printc(char c);
 void print(const char *str);
 void println(const char *str);
+void print_at(const char* message, int row, int col);
 void set_color(uint8_t fg, uint8_t bg);
 
 
@@ -48,5 +51,9 @@ void move_cursor_left();
 void move_cursor_right();
 
 void int_to_string(int number, char *str);
+
+void* memset(void* ptr, int value, size_t num);
+
+
 
 #endif

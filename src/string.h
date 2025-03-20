@@ -18,5 +18,7 @@ int strcmp(const char* s1, const char* s2);
 char* strchr(const char* str, char c);
 char* strcpy(char* dest, const char* src);
 int strncmp(const char* str1, const char* str2, size_t n);
+void itoa(int value, char* str);
+char* strcat(char* dest, const char* src);
 
 #endif // STRING_H

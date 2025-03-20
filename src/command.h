@@ -37,4 +37,7 @@ int parse_command(const char* command, char* cmd, char args[MAX_ARGS][INPUT_BUFF
  */
 void process_command(const char* command);
 
+void set_rtc_date(uint8_t day, uint8_t month, uint8_t year);
+void set_rtc_time(uint8_t hour, uint8_t minute, uint8_t second);
+
 #endif // COMMAND_H

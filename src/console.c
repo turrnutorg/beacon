@@ -121,34 +121,45 @@ void move_cursor_left()
 }
 
 
-void int_to_string(int number, char *str) {
-    int is_negative = 0;
+void int_to_str(int value, char* str, int min_digits) {
+    char buffer[16];
     int i = 0;
+    int is_negative = 0;
 
-    // Handle negative numbers
-    if (number < 0) {
+    if (value < 0) {
         is_negative = 1;
-        number = -number; // Make it positive for easier processing
+        value = -value;
     }
 
-    // Extract digits and store them in reverse order
     do {
-        str[i++] = (number % 10) + '0'; // Convert digit to character
-        number /= 10;
-    } while (number > 0);
+        buffer[i++] = '0' + (value % 10);
+        value /= 10;
+    } while (value);
 
-    // Add negative sign if needed
+    // add leading zeroes
+    while (i < min_digits) {
+        buffer[i++] = '0';
+    }
+
     if (is_negative) {
-        str[i++] = '-';
+        buffer[i++] = '-';
     }
 
-    // Null-terminate the string
-    str[i] = '\0';
-
-    // Reverse the string to get the correct order
-    for (int j = 0, k = i - 1; j < k; ++j, --k) {
-        char temp = str[j];
-        str[j] = str[k];
-        str[k] = temp;
+    // reverse it into str
+    int j = 0;
+    while (i > 0) {
+        str[j++] = buffer[--i];
     }
+
+    str[j] = '\0';
 }
+
+void* memset(void* ptr, int value, size_t num) {
+    unsigned char* p = (unsigned char*)ptr;
+    for (size_t i = 0; i < num; i++) {
+        p[i] = (unsigned char)value;
+    }
+    return ptr;
+}
+
+

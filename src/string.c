@@ -86,3 +86,48 @@ int strncmp(const char* str1, const char* str2, size_t n) {
 
     return 0; // Strings are equal up to n characters
 }
+
+ /**
+  * Integer to ASCII conversion (itoa)
+  */
+void itoa(int value, char* str) {
+    char* p = str;
+    char* p1, *p2;
+    unsigned int abs_value = value;
+
+    if (value < 0) {
+        *p++ = '-';
+        abs_value = -value;
+    }
+
+    p1 = p;
+
+    do {
+        *p++ = '0' + (abs_value % 10);
+        abs_value /= 10;
+    } while (abs_value);
+
+    *p = '\0';
+
+    // reverse it
+    p2 = p - 1;
+    while (p1 < p2) {
+        char temp = *p1;
+        *p1 = *p2;
+        *p2 = temp;
+        p1++;
+        p2--;
+    }
+}
+
+char* strcat(char* dest, const char* src) {
+    char* ptr = dest + strlen(dest);  // find end of dest
+
+    while (*src != '\0') {
+        *ptr++ = *src++;
+    }
+
+    *ptr = '\0';  // null terminate
+    return dest;
+}
+

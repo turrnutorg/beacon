@@ -52,3 +52,28 @@ void scroll_screen() {
         vga_buffer[(NUM_ROWS - 1) * NUM_COLS + j] = (struct Char){' ', default_color};
     }
 }
+
+void putchar(char c) {
+    if (c == '\n') {
+        curs_row++;
+        curs_col = 0;
+    } else if (c == '\r') {
+        curs_col = 0;
+    } else {
+        const size_t index = curs_row * NUM_COLS + curs_col;
+        vga_buffer[index].character = c;
+        vga_buffer[index].color = default_color;
+        curs_col++;
+        if (curs_col >= NUM_COLS) {
+            curs_col = 0;
+            curs_row++;
+        }
+    }
+
+    if (curs_row >= NUM_ROWS) {
+        // ye should scroll here, but we’ll just reset the row for now
+        curs_row = 0; // or scroll_screen() if ye wrote one
+    }
+
+    update_cursor();
+}

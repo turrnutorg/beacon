@@ -135,6 +135,7 @@ void handle_keypress(uint8_t scancode) {
     if (!ascii) return; // ignore invalid scancodes
 
     if (ascii == '\b') { // Handle backspace
+        if (setup_mode == 0) {
         if (input_len > 0) {
             input_len--;
 
@@ -162,6 +163,7 @@ void handle_keypress(uint8_t scancode) {
 
             // Update cursor position visually
             update_cursor();
+        }
         }
     } else if (ascii == UP_ARROW) {
         col = 0;
