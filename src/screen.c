@@ -16,6 +16,8 @@ extern uint8_t default_color;
 size_t curs_row = 0;
 size_t curs_col = 0;
 
+int is_scrolling = 0;
+
 // Enable the VGA cursor
 void enable_cursor(uint8_t cursor_start, uint8_t cursor_end) {
     outb(0x3D4, 0x0A); // Cursor start register
@@ -39,20 +41,36 @@ void update_cursor() {
     outb(0x3D5, position & 0xFF);                      // Send low byte
 }
 
-// Scroll the screen when the bottom is reached
 void scroll_screen() {
-    retain_clock = 0;
-    for (size_t i = 1; i < NUM_ROWS; i++) {
+    retain_clock = 0;  // Stop the clock while scrolling
+    is_scrolling = 1;  // Set scrolling flag
+    // If cursor is at or past the last row, move it to the second-to-last row
+    if (curs_row >= NUM_ROWS - 1) {
+        curs_row = NUM_ROWS - 2;
+    }
+
+    // Allow the new line to print in the last row
+    update_cursor();  // Print to the last row (cursor is at second-to-last)
+
+    // Shift the rows up by one to make space for the next line
+    for (size_t i = 0; i < NUM_ROWS - 1; i++) {  // Don't shift the last row
         for (size_t j = 0; j < NUM_COLS; j++) {
-            size_t from = i * NUM_COLS + j;
-            size_t to = (i - 1) * NUM_COLS + j;
+            size_t from = (i + 1) * NUM_COLS + j;
+            size_t to = i * NUM_COLS + j;
             vga_buffer[to] = vga_buffer[from];
         }
     }
+
+    // Clear the last row after the shift
     for (size_t j = 0; j < NUM_COLS; j++) {
         vga_buffer[(NUM_ROWS - 1) * NUM_COLS + j] = (struct Char){' ', default_color};
     }
+
+    // Move the cursor back to the second-to-last row after printing
+    curs_row = NUM_ROWS - 3;
+    update_cursor();  // Update cursor position after the scroll
 }
+
 
 void putchar(char c) {
     if (c == '\n') {

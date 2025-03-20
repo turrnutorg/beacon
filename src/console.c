@@ -48,18 +48,7 @@ void newline()
         return;
     }
 
-    // Scroll the screen if we're at the bottom
-    for (size_t row = 1; row < NUM_ROWS; row++)
-    {
-        for (size_t col = 0; col < NUM_COLS; col++)
-        {
-            struct Char character = buffer[col + NUM_COLS * row];
-            buffer[col + NUM_COLS * (row - 1)] = character;
-        }
-    }
-
-    // Clear the last row after scrolling
-    clear_row(NUM_ROWS - 1);
+    scroll_screen();  // Scroll the screen if we're at the last row
 }
 
 void printc(char character)
@@ -73,6 +62,8 @@ void printc(char character)
     if (col >= NUM_COLS)
     {
         newline();
+        curs_row++;
+        update_cursor();
     }
 
     buffer[col + NUM_COLS * row] = (struct Char){

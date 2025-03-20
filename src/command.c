@@ -11,6 +11,7 @@
  #include "screen.h"
  #include "os.h"
  #include "stdtypes.h"
+ #include "keyboard.h"
  #include "string.h"
  #include <stdint.h>
  #include <stdarg.h>
@@ -33,7 +34,6 @@ int rainbow_mode = 0; // 0 for both, 1 for text, 2 for background
 unsigned long last_rainbow_update = 0; // For timing the updates
 
 void update_rainbow() {
-    // while (rainbow_running == 1) {
         if (!rainbow_running) return;  // Do nothing if rainbow isn't running
 
         for (int i = 1; i <= 15; i++) {  // Colors from 1 to 15, skipping black
@@ -57,7 +57,6 @@ void update_rainbow() {
             delay_ms(100); // Speed of color change (adjustable)
         }
     }
-//}
 
 
 
@@ -264,6 +263,7 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
         println("Resetting the screen...");
         delay_ms(1000);
         rainbow_running = 0;
+        input_len = 0;
         start();
 
      } else if (strcmp(cmd, "rainbow") == 0) {
@@ -384,9 +384,7 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
             }
         }
     } else if (strcmp(cmd, "") == 0) {
-         move_cursor_back();
-         update_cursor();
- 
+        return; // Do nothing if the command is empty
      } else {
          move_cursor_back();
          print("\"");

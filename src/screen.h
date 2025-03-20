@@ -30,6 +30,8 @@ extern uint8_t default_color;
 extern size_t curs_row; // Ensure this is size_t
 extern size_t curs_col; // Ensure this is size_t
 
+extern int is_scrolling;
+
 // Screen-related functions
 void enable_cursor(uint8_t cursor_start, uint8_t cursor_end);
 void disable_cursor();

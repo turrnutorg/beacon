@@ -60,7 +60,7 @@
     strncpy(input_buffer, "setdate ", INPUT_BUFFER_SIZE);
     move_cursor_back();
     curs_col = 0;
-    curs_row = 4;
+    curs_row = 3;
     update_cursor();
 
     // Loop until date entry is done
@@ -240,9 +240,8 @@ void display_datetime() {
     enable_cursor(0, 15);
 
     if (setup_ran == 0) {
-    println("The Beacon Operating System.");
+    println("The Beacon Operating System. (v6.22 :P)");
     println("Copyright (c) 2025 Turrnut Open Source Organization.");
-    println("");
 
     run_initial_setup();  // <<<<<< all the dumb shit is in here now
     }
@@ -251,7 +250,7 @@ void display_datetime() {
     setup_mode = 0;
 
     retain_clock = 1;
-    println("Welcome to the Beacon OS.");
+    println("Welcome to Beacon OS.");
     println("");
     display_datetime();
     println("Type a command (type 'help' for a list):");
