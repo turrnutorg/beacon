@@ -250,9 +250,10 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
          curs_col = 0;
          row = 0;
          col = 0;
-         retain_clock = 0;
-         println("Beacon Operating System. (C) 2025 Turrnut Open Source Organization.");
-         println("Type a command (type 'help' for a list):");
+         retain_clock = 1;
+         println("Copyright (c) 2025 Turrnut Open Source Organization.");
+         println("");
+         display_datetime();
          update_cursor();
  
      } else if (strcmp(cmd, "reboot") == 0) {
@@ -380,10 +381,10 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
             update_cursor();
 
      } else if (strcmp(cmd, "settime") == 0) {
-         if (arg_count != 3) {
-             println("Usage: settime <hour> <minute> <second>");
-         } else {
-             int hour = atoi(args[0]);
+        if (arg_count != 3) {
+            println("Usage: settime <hour> <minute> <second>");
+        } else {
+            int hour = atoi(args[0]);
              int minute = atoi(args[1]);
              int second = atoi(args[2]);
  
@@ -398,7 +399,7 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
          }
      } else if (strcmp(cmd, "setdate") == 0) {
         if (arg_count != 3) {
-            println("Usage: setdate <day> <month> <year>");
+            println("Usage: setdate <day(DD)> <month(MM)> <year(YY)>");
         } else {
             int day = atoi(args[0]);
             int month = atoi(args[1]);

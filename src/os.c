@@ -55,7 +55,7 @@
  void run_initial_setup() {
     setup_mode = 1;  // DATE SETUP
 
-    println("Enter current date (DD MM YYYY):");
+    println("Enter current date (DD MM YY):");
     input_len = strlen("setdate ");
     strncpy(input_buffer, "setdate ", INPUT_BUFFER_SIZE);
     move_cursor_back();
@@ -240,18 +240,12 @@ void display_datetime() {
 
     enable_cursor(0, 15);
 
-    if (setup_ran == 0) {
-    println("The Beacon Operating System. Starting initial setup...");
-    println("Copyright (c) 2025 Turrnut Open Source Organization.");
-
-    run_initial_setup();  // <<<<<< all the dumb shit is in here now
-    }
     col = 0;
     row = 0;
     setup_mode = 0;
 
     retain_clock = 1;
-    println("Welcome to Beacon OS.");
+    println("Copyright (c) 2025 Turrnut Open Source Organization.");
     println("");
     display_datetime();
     println("Type a command (type 'help' for a list):");
@@ -271,11 +265,11 @@ void display_datetime() {
         }
 
         if (retain_clock == 1) {
-        loop_counter++;
-        if (loop_counter >= 50000) {
-            display_datetime();
-            loop_counter = 0;
-        }
+            loop_counter++;
+            if (loop_counter >= 50000) {
+                display_datetime();
+                loop_counter = 0;
+            }
         }
         update_rainbow();
     }
