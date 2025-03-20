@@ -41,6 +41,7 @@ void update_cursor() {
 
 // Scroll the screen when the bottom is reached
 void scroll_screen() {
+    retain_clock = 0;
     for (size_t i = 1; i < NUM_ROWS; i++) {
         for (size_t j = 0; j < NUM_COLS; j++) {
             size_t from = i * NUM_COLS + j;
@@ -71,8 +72,8 @@ void putchar(char c) {
     }
 
     if (curs_row >= NUM_ROWS) {
-        // ye should scroll here, but we’ll just reset the row for now
-        curs_row = 0; // or scroll_screen() if ye wrote one
+        scroll_screen();
+        curs_row = 0; 
     }
 
     update_cursor();

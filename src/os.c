@@ -27,6 +27,8 @@
  extern size_t curs_col;
 
  int setup_mode = 0;  // this has to EXIST somewhere, ya radge
+ int retain_clock = 1;
+ int setup_ran = 0;
 
  const char* get_month_name(uint8_t month) {
     static const char* months[] = {
@@ -102,6 +104,7 @@
             }
         }
     }
+    setup_ran = 1;
     setup_mode = 0;
     delay_ms(500);
     clear_screen();
@@ -232,23 +235,26 @@ void display_datetime() {
   void start() {
     clear_screen();
     set_color(GREEN_COLOR, WHITE_COLOR);
+    repaint_screen(GREEN_COLOR, WHITE_COLOR);
 
     enable_cursor(0, 15);
 
+    if (setup_ran == 0) {
     println("The Beacon Operating System.");
     println("Copyright (c) 2025 Turrnut Open Source Organization.");
     println("");
 
     run_initial_setup();  // <<<<<< all the dumb shit is in here now
-
+    }
     col = 0;
     row = 0;
     setup_mode = 0;
 
+    retain_clock = 1;
     println("Welcome to the Beacon OS.");
     println("");
     display_datetime();
-    println("Type a command:");
+    println("Type a command (type 'help' for a list):");
 
     curs_row = 3;
     curs_col = 0;
@@ -264,10 +270,12 @@ void display_datetime() {
             handle_keypress(scancode);
         }
 
+        if (retain_clock == 1) {
         loop_counter++;
         if (loop_counter >= 50000) {
             display_datetime();
             loop_counter = 0;
+        }
         }
     }
 }

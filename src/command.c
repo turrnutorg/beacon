@@ -28,6 +28,8 @@
  int command_history_index = 0;     // Index to store the next command
  int current_history_index = -1;    // Index for navigating history
  
+ int macos = 0; // macos mode
+
  /**
   * Converts a string to lowercase.
   */
@@ -154,7 +156,15 @@
     outb(0x71, prev_b & ~0x80);
 }
 
- 
+
+void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
+    uint8_t color = (bg_color << 4) | fg_color;
+
+    for (int i = 0; i < NUM_ROWS * NUM_COLS; i++) {
+        vga_buffer[i].color = color;
+    }
+}
+
  /**
   * Advance cursor after command
   */
@@ -205,9 +215,11 @@
      } else if (strcmp(cmd, "clear") == 0) {
          clear_screen();
          curs_row = 0;
+         curs_col = 0;
          row = 0;
+         col = 0;
+         retain_clock = 0;
          println("");
-         move_cursor_back();
          update_cursor();
  
      } else if (strcmp(cmd, "reboot") == 0) {
@@ -215,13 +227,72 @@
          delay_ms(1000);
          reboot();
  
+     } else if (strcmp(cmd, "reset") == 0) {
+        println("Resetting the screen...");
+        delay_ms(1000);
+        start();
+
      } else if (strcmp(cmd, "shutdown") == 0) {
          println("Shutting down the system...");
          delay_ms(1000);
          shutdown();
  
-     } else if (strcmp(cmd, "hello") == 0) {
+     } else if (strcmp(cmd, "color") == 0) {
+        if (arg_count != 2) {
+            println("Usage: color <text color> <background color>");
+            return;
+        }
+    
+        int fg = atoi(args[0]);
+        int bg = atoi(args[1]);
+    
+        if (fg < 0 || fg > 15 || bg < 0 || bg > 15) {
+            println("Color values must be between 0 and 15.");
+            return;
+        }
+    
+        uint8_t color = (bg << 4) | fg;
+    
+        // set the default color for future prints
+        set_color(fg, bg);
+    
+        // repaint the entire screen
+        repaint_screen(fg, bg);
+    
+        // feedback, optional
+        println("Colors updated. Try not to blind yourself.");
+    } else if (strcmp(cmd, "hello") == 0) {
         println("World!");
+
+     } else if (strcmp(cmd, "macos") == 0) {
+        if (macos == 1) {
+            set_color(GREEN_COLOR, WHITE_COLOR);
+            repaint_screen(GREEN_COLOR, WHITE_COLOR);
+            println("Welcome to Beacon OS. This is not macOS.");
+            macos = 0;
+        } else if (macos == 0) {
+            set_color(WHITE_COLOR, LIGHT_BLUE_COLOR);
+            repaint_screen(WHITE_COLOR, LIGHT_BLUE_COLOR);
+            println("No, this is not macOS. This is Beacon OS. But I'll humor you.");
+            macos = 1;
+        }
+        
+     } else if (strcmp(cmd, "help") == 0) {
+         println("Available commands:");
+         println("test [argument] - Test command with optional argument.");
+         println("echo [text] - Echo the text back to the console.");
+         println("clear - Clear the screen.");
+         println("reboot - Reboot the system.");
+         println("shutdown - Shutdown the system.");
+         println("hello - Print 'World!'.");
+         println("help - Display this help message.");
+         println("settime [hour] [minute] [second] - Set the RTC time.");
+         println("setdate [day] [month] [year] - Set the RTC date.");
+         println("reset - Reset the screen.");
+         println("color [text color] [background color] - Change text and background colors.");
+         curs_row += 11;
+            update_cursor();
+
      } else if (strcmp(cmd, "settime") == 0) {
          if (arg_count != 3) {
              println("Usage: settime <hour> <minute> <second>");

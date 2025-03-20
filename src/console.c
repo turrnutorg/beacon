@@ -7,9 +7,7 @@
  */
 
 #include "console.h"
-
-const static size_t NUM_COLS = 80;
-const static size_t NUM_ROWS = 25;
+#include "screen.h"
 
 // Define col and row in this file
 size_t col = 0;
@@ -17,13 +15,6 @@ size_t row = 0;
 
 // Default color setting
 uint8_t default_color = GREEN_COLOR | WHITE_COLOR << 4;
-
-struct Char {
-    uint8_t character;
-    uint8_t color;
-};
-
-
 struct Char *buffer = (struct Char *)0xb8000;
 
 void clear_row(size_t row)
@@ -104,6 +95,7 @@ void println(const char *str)
 {
     print(str);
     newline();  // Move to a new line after printing
+    update_cursor();
 }
 
 void set_color(uint8_t foreground, uint8_t background)

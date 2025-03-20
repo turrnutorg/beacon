@@ -12,6 +12,7 @@
 #include "stdtypes.h"
 
 extern int setup_mode;
+extern int retain_clock;
 
 // Function declarations
 void outb(uint16_t port, uint8_t value);
