@@ -38,5 +38,6 @@ void disable_cursor();
 void update_cursor();
 void scroll_screen();
 void putchar(char c);
+void enable_bright_bg();
 
 #endif // SCREEN_H

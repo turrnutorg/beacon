@@ -272,10 +272,12 @@ void display_datetime() {
   * Entry point of the OS.
   */
   void start() {
+    
     clear_screen();
     set_color(GREEN_COLOR, WHITE_COLOR);
     repaint_screen(GREEN_COLOR, WHITE_COLOR);
 
+    enable_bright_bg();
     enable_cursor(0, 15);
 
     if (setup_ran == 0) {
