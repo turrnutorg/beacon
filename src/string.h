@@ -20,5 +20,6 @@ char* strcpy(char* dest, const char* src);
 int strncmp(const char* str1, const char* str2, size_t n);
 void itoa(int value, char* str);
 char* strcat(char* dest, const char* src);
+char* strstr(const char* haystack, const char* needle);
 
 #endif // STRING_H

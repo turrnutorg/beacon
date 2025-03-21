@@ -238,13 +238,80 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
          }
  
      } else if (strcmp(cmd, "echo") == 0) {
-         for (int i = 0; i < arg_count; i++) {
-             print(args[i]);
-             print(" ");
-         }
-         println("");
- 
-     } else if (strcmp(cmd, "clear") == 0) {
+        if (arg_count < 1) {
+            println("Usage: echo \"text\" [repeat_count]");
+        } else {
+            // join the args if the text is split by spaces
+            char full_text[INPUT_BUFFER_SIZE];
+            memset(full_text, 0, sizeof(full_text));
+            int repeat_count = 1;
+            
+            // text must be wrapped in quotes or single quotes
+            if (args[0][0] == '\"' || args[0][0] == '\'') {
+                char quote_char = args[0][0];
+                strcpy(full_text, args[0]);
+                int i = 1;
+                // join subsequent args until the ending quote is found
+                while (i < arg_count && full_text[strlen(full_text) - 1] != quote_char) {
+                    strcat(full_text, " ");
+                    strcat(full_text, args[i]);
+                    i++;
+                }
+                if (strlen(full_text) < 2 || full_text[0] != quote_char || full_text[strlen(full_text) - 1] != quote_char) {
+
+                    println("Text must be wrapped in matching quotes or single quotes, ya donut.");
+                    curs_row++;
+                    return;
+                }
+                // if there's another arg, treat it as repeat_count
+                if (i < arg_count) {
+                    repeat_count = atoi(args[i]);
+                    if (repeat_count <= 0) {
+                        println("Repeat count must be a positive number, ya melon.");
+                    }
+                }
+            } else {
+                println("Text must be wrapped in quotes or single quotes, ya donut.");
+                curs_row++;
+                return;
+            }
+    
+            // strip the quotes off the joined text
+            size_t len = strlen(full_text);
+            full_text[len - 1] = '\0';  // remove the closing quote
+            char *text = full_text + 1; // skip the opening quote
+
+            curs_row--;  
+    
+            // output the text, processing /n markers, but don't add newlines per repeat automatically
+            for (int r = 0; r < repeat_count; r++) {
+                char *p = text;  // RESET POINTER FOR EACH REPEAT            
+                while (*p) {
+                    char *marker = strstr(p, "/n");
+                    if (marker != NULL) {
+                        int token_len = marker - p;
+                        char token[token_len + 1];
+                        strncpy(token, p, token_len);
+                        token[token_len] = '\0';
+            
+                        println(token);
+                        curs_row++;  
+                        update_cursor();
+            
+                        p = marker + 2; // MOVE PAST "/n"
+                        col = 0;
+                    } else {
+                        println(p);
+                        curs_row++;
+                        update_cursor();
+                        break;
+                    }
+                }
+            }
+            
+        }
+    }
+     else if (strcmp(cmd, "clear") == 0) {
          clear_screen();
          curs_row = 0;
          curs_col = 0;
@@ -367,7 +434,7 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
      } else if (strcmp(cmd, "help") == 0) {
          println("Available commands:");
          println("test [argument] - Test command with optional argument.");
-         println("echo [text] - Echo the text back to the console.");
+         println("echo [\"text\"] [repetions] - Echo the text back to the console. /n for new line.");
          println("clear - Clear the screen (does not clear visual effects).");
          println("reboot - Reboot the system.");
          println("shutdown - Shutdown the system.");
