@@ -244,7 +244,7 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
  
      to_lowercase(cmd);
  
-     if (strcmp(cmd, "test") == 0) {
+    if (strcmp(cmd, "test") == 0) {
          if (arg_count > 0) {
              if (strcmp(args[0], "argument") == 0) {
                  println("You passed the magic argument 'argument'. Congrats, I guess.");
@@ -255,76 +255,25 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
              println("This is a test command, but you didn't even give me any arguments. Nice one.");
          }
  
-     } else if (strcmp(cmd, "echo") == 0) {
+    } else if (strcmp(cmd, "echo") == 0) {
         if (arg_count < 1) {
-            println("Usage: echo \"text\" [repeat_count]");
+            println("Usage: echo [repeat_count] \"text\"");
         } else {
-            // join the args if the text is split by spaces
-            char full_text[INPUT_BUFFER_SIZE];
-            memset(full_text, 0, sizeof(full_text));
-            int repeat_count = 1;
-            
-            // text must be wrapped in quotes or single quotes
-            if (args[0][0] == '\"' || args[0][0] == '\'') {
-                char quote_char = args[0][0];
-                strcpy(full_text, args[0]);
-                int i = 1;
-                // join subsequent args until the ending quote is found
-                while (i < arg_count && full_text[strlen(full_text) - 1] != quote_char) {
-                    strcat(full_text, " ");
-                    strcat(full_text, args[i]);
-                    i++;
-                }
-                if (strlen(full_text) < 2 || full_text[0] != quote_char || full_text[strlen(full_text) - 1] != quote_char) {
-
-                    println("Text must be wrapped in matching quotes or single quotes, ya donut.");
-                    curs_row++;
-                    return;
-                }
-                // if there's another arg, treat it as repeat_count
-                if (i < arg_count) {
-                    repeat_count = atoi(args[i]);
-                    if (repeat_count <= 0) {
-                        println("Repeat count must be a positive number, ya melon.");
-                    }
-                }
+            long long repeat_count = atoi(args[0]);
+            if (repeat_count <= 0) {
+                println("Repeat count must be a positive number.");
             } else {
-                println("Text must be wrapped in quotes or single quotes, ya donut.");
-                curs_row++;
-                return;
-            }
-    
-            // strip the quotes off the joined text
-            size_t len = strlen(full_text);
-            full_text[len - 1] = '\0';  // remove the closing quote
-            char *text = full_text + 1; // skip the opening quote
-
-            curs_row--;  
-    
-            // output the text, processing /n markers, but don't add newlines per repeat automatically
-            for (int r = 0; r < repeat_count; r++) {
-                char *p = text;  // RESET POINTER FOR EACH REPEAT            
-                while (*p) {
-                    char *marker = strstr(p, "/n");
-                    if (marker != NULL) {
-                        int token_len = marker - p;
-                        char token[token_len + 1];
-                        strncpy(token, p, token_len);
-                        token[token_len] = '\0';
-            
-                        println(token);
-                        curs_row++;  
-                        update_cursor();
-            
-                        p = marker + 2; // MOVE PAST "/n"
-                        col = 0;
-                    } else {
-                        println(p);
-                        curs_row++;
-                        update_cursor();
-                        break;
+                for (int i = 0; i < repeat_count; i ++) {
+                    for (int i = 1; i < arg_count; i++) {
+                        print(args[i]);
+                        print(" ");
                     }
+                    println("");
+                    curs_row ++;
+                    curs_col = 0;
                 }
+                println("");
+
             }
         }
     } else if (strcmp(cmd, "clear") == 0) {
@@ -339,19 +288,19 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
          display_datetime();
          update_cursor();
  
-     } else if (strcmp(cmd, "reboot") == 0) {
+    } else if (strcmp(cmd, "reboot") == 0) {
          println("Rebooting the system...");
          delay_ms(1000);
          reboot();
  
-     } else if (strcmp(cmd, "reset") == 0) {
+    } else if (strcmp(cmd, "reset") == 0) {
         println("Resetting the screen...");
         delay_ms(1000);
         rainbow_running = 0;
         input_len = 0;
         start();
 
-     } else if (strcmp(cmd, "rainbow") == 0) {
+    } else if (strcmp(cmd, "rainbow") == 0) {
         if (arg_count == 0) {
             println("Usage: rainbow [text|background|both]");
         } else {
@@ -376,7 +325,7 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
          delay_ms(1000);
          shutdown();
  
-     } else if (strcmp(cmd, "color") == 0) {
+    } else if (strcmp(cmd, "color") == 0) {
         if (arg_count != 2) {
             println("Usage: color <text color> <background color>");
         } else {
@@ -722,24 +671,54 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
             macos = 1;
         }
         
-     } else if (strcmp(cmd, "help") == 0) {
-         println("Available commands:");
-         println("test [argument] - Test command with optional argument.");
-         println("echo [\"text\"] [repetions] - Echo the text back to the console. /n for new line.");
-         println("clear - Clear the screen (does not clear visual effects).");
-         println("reboot - Reboot the system.");
-         println("shutdown - Shutdown the system.");
-         println("help - Display this help message.");
-         println("settime [hour] [minute] [second] - Set the RTC time.");
-         println("setdate [day] [month] [year] - Set the RTC date.");
-         println("reset - Reset the screen to default.");
-         println("color [text color] [background color] - Change text and background colors.");
-         println("beep - [frequency] [duration] - Beep at a certain frequency and duration.");
-         println("melody - [freq] [duration] | play/delete/clear/show - Make and play a melody!");
-         curs_row += 12;
+    } else if (strcmp(cmd, "help") == 0) {
+        if(arg_count == 0){
+            println("Available command categories:");
+            println("1 - General commands");
+            println("2 - Music commands");
+            println("3 - Settings commands");
+            println("4 - Test commands");
+            println("");
+            println("To inspect one category in more detail, use \"help [number]\"");
+            curs_row += 6;
             update_cursor();
+        } else if (strcmp(args[0], "1") == 0){
+            println("Available general commands");
+            println("clear - Clear the screen (does not clear visual effects).");
+            println("color <text color> <background color> - Change text and background colors.");
+            println("echo <repetions> <\"text\"> - Echo the text back to the console. /n for new line.");
+            println("help - Display this help message.");
+            println("reboot - Reboot the system.");
+            println("reset - Reset the screen to default.");
+            println("shutdown - Shutdown the system.");
+            curs_row += 7;
+            update_cursor();
+        } else if (strcmp(args[0], "2") == 0){
+            println("Available music commands");
+            println("beep - <frequency> <duration> - Beep at a certain frequency and duration.");
+            println("melody - <frequency> <duration> [play/delete/clear/show] - Make and play a melody!");
+            curs_row += 2;
+            update_cursor();
+        } else if (strcmp(args[0], "3") == 0){
+            println("Available settings commands");
+            println("settime <hour> <minute> <second> - Set the RTC time.");
+            println("setdate <day> <month> <year> - Set the RTC date.");
+            curs_row += 2;
+            update_cursor();
+        } else if (strcmp(args[0], "4") == 0){
+            println("Available test commands");
+            println("macos - no need for ths command... this is not MacOS...");
+            println("poem - display the Beacon Poem");
+            println("test [argument] - Test command with optional argument.");
+            curs_row += 3;
+            update_cursor();
+        } else {
+            println("Usage: help [number]");
+        }
+        
+        
 
-     } else if (strcmp(cmd, "settime") == 0) {
+    } else if (strcmp(cmd, "settime") == 0) {
         if (arg_count != 3 && setup_ran == 1) {
             println("Usage: settime <hour (24h time)> <minute> <second>");
         } else if (arg_count != 3 && setup_ran == 0) {
@@ -762,7 +741,7 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
                  }
              }
          }
-     } else if (strcmp(cmd, "setdate") == 0) {
+    } else if (strcmp(cmd, "setdate") == 0) {
         if (arg_count != 3 && setup_ran == 1) {
             println("Usage: setdate <day(DD)> <month(MM)> <year(YY)>");
         } else if (arg_count != 3 && setup_ran == 0) {
