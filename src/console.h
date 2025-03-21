@@ -53,7 +53,6 @@ void move_cursor_right();
 void int_to_string(int number, char *str);
 
 void* memset(void* ptr, int value, size_t num);
-
-
+unsigned int rand(unsigned int max);
 
 #endif

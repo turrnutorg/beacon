@@ -22,5 +22,6 @@ void itoa(int value, char* str);
 char* strcat(char* dest, const char* src);
 char* strstr(const char* haystack, const char* needle);
 int snprintf(char *buffer, uint32_t buf_size, const char *format, ...);
+char *strncat(char *dest, const char *src, size_t max);
 
 #endif // STRING_H

@@ -206,3 +206,25 @@ int snprintf(char *buffer, uint32_t buf_size, const char *format, ...) {
 
     return buf_ptr - buffer;
 }
+
+char *strncat(char *dest, const char *src, size_t max) {
+    size_t dest_len = 0;
+    size_t i = 0;
+
+    // find the end of dest
+    while (dest[dest_len] != '\0') {
+        dest_len++;
+    }
+
+    // append src until max space runs out or src ends
+    while (src[i] != '\0' && dest_len + i < max - 1) {
+        dest[dest_len + i] = src[i];
+        i++;
+    }
+
+    // null-terminate the result
+    dest[dest_len + i] = '\0';
+
+    return dest;
+}
+

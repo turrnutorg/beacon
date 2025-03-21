@@ -146,4 +146,18 @@ void* memset(void* ptr, int value, size_t num) {
     return ptr;
 }
 
+// global seed, cos why the fuck not
+unsigned int rng_seed = 123456789;
+
+// call this tae set the seed, if ye give a toss
+void srand(unsigned int seed) {
+    rng_seed = seed;
+}
+
+// random number between 0 and max-1
+unsigned int rand(unsigned int max) {
+    rng_seed = rng_seed * 1103515245 + 12345;
+    return (rng_seed >> 16) % max;
+}
+
 
