@@ -13,6 +13,7 @@
  #include "stdtypes.h"
  #include "keyboard.h"
  #include "string.h"
+ #include "speaker.h"
  #include <stdint.h>
  #include <stdarg.h>
 
@@ -32,6 +33,16 @@
 int rainbow_running = 0; // 0 means stopped, 1 means running
 int rainbow_mode = 0; // 0 for both, 1 for text, 2 for background
 unsigned long last_rainbow_update = 0; // For timing the updates
+
+#define MELODY_QUEUE_SIZE 128
+
+typedef struct {
+    uint32_t freq;
+    uint32_t duration;
+} MelodyNote;
+
+MelodyNote melodyQueue[MELODY_QUEUE_SIZE];
+int melodyQueueSize = 0;
 
 void update_rainbow() {
         if (!rainbow_running) return;  // Do nothing if rainbow isn't running
@@ -308,10 +319,8 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
                     }
                 }
             }
-            
         }
-    }
-     else if (strcmp(cmd, "clear") == 0) {
+    } else if (strcmp(cmd, "clear") == 0) {
          clear_screen();
          curs_row = 0;
          curs_col = 0;
@@ -355,9 +364,7 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
             }
             rainbow_running = 1; // Start rainbow cycling
         }
-    }
-
-     else if (strcmp(cmd, "shutdown") == 0) {
+    } else if (strcmp(cmd, "shutdown") == 0) {
          println("Shutting down the system...");
          delay_ms(1000);
          shutdown();
@@ -386,9 +393,81 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
                 println("Colors updated. Try not to blind yourself.");
                 }
         }
-    } else if (strcmp(cmd, "hello") == 0) {
-        println("World!");
+    }     else if (strcmp(cmd, "melody") == 0) {
+        if (arg_count == 0) {
+            println("Usage: melody <freq> <duration_ms> | play | delete | clear | show [last]");
+        }
+        else if (strcmp(args[0], "play") == 0) {
+            if (melodyQueueSize == 0) {
+                println("Queue's empty, ya muppet. Nothing tae play.");
+            } else {
+                println("Playing melody queue...");
+                for (int i = 0; i < melodyQueueSize; i++) {
+                    char buf[64];
+                    println("Beep!");
+                    beep(melodyQueue[i].freq, melodyQueue[i].duration);
+                }
+                println("Finished playing melody.");
+            }
+        }
+        else if (strcmp(args[0], "delete") == 0) {
+            if (melodyQueueSize == 0) {
+                println("Queue's already empty, ya tube.");
+            } else {
+                melodyQueueSize--;
+                println("Deleted last note from the queue.");
+            }
+        }
+        else if (strcmp(args[0], "clear") == 0) {
+            melodyQueueSize = 0;
+            println("Cleared the entire queue. Wiped cleaner than yer browsing history.");
+        }
+        else if (strcmp(args[0], "show") == 0) {
+            if (arg_count == 2 && strcmp(args[1], "last") == 0) {
+                if (melodyQueueSize == 0) {
+                    println("Queue's empty. No last note tae show, ya dafty.");
+                } else {
+                    char buf[64];
+                    snprintf(buf, sizeof(buf), "Last note: %d Hz, %d ms",
+                             melodyQueue[melodyQueueSize - 1].freq,
+                             melodyQueue[melodyQueueSize - 1].duration);
+                    println(buf);
+                }
+            } else {
+                if (melodyQueueSize == 0) {
+                    println("Queue's empty. What the fuck are ye tryin' to look at?");
+                } else {
+                    println("Melody queue:");
+                    for (int i = 0; i < melodyQueueSize; i++) {
+                        char buf[64];
+                        snprintf(buf, sizeof(buf), "%d: %d Hz, %d ms",
+                                 i + 1,
+                                 melodyQueue[i].freq,
+                                 melodyQueue[i].duration);
+                        println(buf);
+                    }
+                    curs_row += melodyQueueSize; // advance cursor row after printin' all notes
+                }
+            }
+        }
+        else if (arg_count == 2) {
+            int freq = atoi(args[0]);
+            int duration = atoi(args[1]);
 
+            if (freq <= 0 || duration <= 0) {
+                println("Invalid; discarded.");
+            } else if (melodyQueueSize >= MELODY_QUEUE_SIZE) {
+                println("Queue's full, ya greedy bastard.");
+            } else {
+                melodyQueue[melodyQueueSize].freq = freq;
+                melodyQueue[melodyQueueSize].duration = duration;
+                melodyQueueSize++;
+                println("Added to melody queue. Another step closer tae makin' yer computer scream.");
+            }
+        }
+        else {
+            println("Invalid; discarded.");
+        }
     } else if (strcmp(cmd, "poem") == 0) {
         retain_clock = 0;
         // Clear the screen
@@ -418,6 +497,7 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
         println("the mountain dew solidifies");
         println("into a 2007 toyota corolla\n");
         curs_row += 21;
+
     } else if (strcmp(cmd, "macos") == 0) {
         if (macos == 1) {
             set_color(GREEN_COLOR, WHITE_COLOR);
@@ -438,13 +518,14 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
          println("clear - Clear the screen (does not clear visual effects).");
          println("reboot - Reboot the system.");
          println("shutdown - Shutdown the system.");
-         println("hello - Print 'World!'.");
          println("help - Display this help message.");
          println("settime [hour] [minute] [second] - Set the RTC time.");
          println("setdate [day] [month] [year] - Set the RTC date.");
          println("reset - Reset the screen to default.");
          println("color [text color] [background color] - Change text and background colors.");
-         curs_row += 11;
+         println("beep - [frequency] [duration] - Beep at a certain frequency and duration.");
+         println("melody - [freq] [duration] | play/delete/clear/show - Make and play a melody!");
+         curs_row += 12;
             update_cursor();
 
      } else if (strcmp(cmd, "settime") == 0) {
@@ -491,6 +572,22 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
                 if (setup_mode == 0) {
                 println("RTC date updated. If it's wrong, you're the moron who typed it.");
                 }
+            }
+        }
+    }     else if (strcmp(cmd, "beep") == 0) {
+        if (arg_count != 2) {
+            println("Usage: beep <frequency in Hz> <duration in ms>");
+        } else {
+            int freq = atoi(args[0]);
+            int duration = atoi(args[1]);
+
+            if (freq <= 0 || duration <= 0) {
+                println("Frequency and duration must be positive numbers, ya dafty.");
+            } else {
+                char msg[64];
+
+                println("Beepin'...");
+                beep(freq, duration);
             }
         }
     } else if (strcmp(cmd, "") == 0) {

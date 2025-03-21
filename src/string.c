@@ -9,6 +9,7 @@
 
 #include "string.h"
 #include <stddef.h>
+#include <stdarg.h>
 
 /**
  * Copies up to n characters from src to dest.
@@ -90,21 +91,29 @@ int strncmp(const char* str1, const char* str2, size_t n) {
  /**
   * Integer to ASCII conversion (itoa)
   */
-void itoa(int value, char* str) {
+ void itoa_base(int value, char* str, int base) {
     char* p = str;
     char* p1, *p2;
     unsigned int abs_value = value;
 
-    if (value < 0) {
+    if (base < 2 || base > 36) {
+        *str = '\0'; // invalid base, get tae fuck
+        return;
+    }
+
+    if (value < 0 && base == 10) {
         *p++ = '-';
         abs_value = -value;
+    } else {
+        abs_value = (unsigned int)value;
     }
 
     p1 = p;
 
     do {
-        *p++ = '0' + (abs_value % 10);
-        abs_value /= 10;
+        int digit = abs_value % base;
+        *p++ = (digit < 10) ? ('0' + digit) : ('a' + digit - 10);
+        abs_value /= base;
     } while (abs_value);
 
     *p = '\0';
@@ -119,6 +128,11 @@ void itoa(int value, char* str) {
         p2--;
     }
 }
+
+// legacy wrapper for backwards-compatibility
+void itoa(int value, char* str) {
+    itoa_base(value, str, 10);
+ }
 
 char* strcat(char* dest, const char* src) {
     char* ptr = dest + strlen(dest);  // find end of dest
@@ -149,3 +163,46 @@ char* strstr(const char* haystack, const char* needle) {
     return NULL; // nae found
 }
 
+int snprintf(char *buffer, uint32_t buf_size, const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+
+    char *buf_ptr = buffer;
+    uint32_t remaining = buf_size - 1; // leave space for null terminator
+
+    for (const char *f = format; *f != '\0' && remaining > 0; f++) {
+        if (*f == '%') {
+            f++; // skip '%'
+            if (*f == 'd') {
+                int val = va_arg(args, int);
+                char temp[16];
+                itoa_base(val, temp, 10);
+
+                for (char *t = temp; *t != '\0' && remaining > 0; t++, remaining--) {
+                    *buf_ptr++ = *t;
+                }
+            } else if (*f == 's') {
+                char *str = va_arg(args, char*);
+                for (; *str != '\0' && remaining > 0; str++, remaining--) {
+                    *buf_ptr++ = *str;
+                }
+            } else {
+                // unsupported specifier, just print it as-is
+                *buf_ptr++ = '%';
+                remaining--;
+                if (remaining > 0) {
+                    *buf_ptr++ = *f;
+                    remaining--;
+                }
+            }
+        } else {
+            *buf_ptr++ = *f;
+            remaining--;
+        }
+    }
+
+    *buf_ptr = '\0';
+    va_end(args);
+
+    return buf_ptr - buffer;
+}

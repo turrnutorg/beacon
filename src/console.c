@@ -9,6 +9,7 @@
 #include "console.h"
 #include "screen.h"
 
+
 // Define col and row in this file
 size_t col = 0;
 size_t row = 0;

@@ -13,6 +13,7 @@
  #include "stdtypes.h"
  #include "command.h"
  #include "string.h"
+ #include "speaker.h"
  
  // External variables from screen.c
  extern volatile struct Char* vga_buffer;
