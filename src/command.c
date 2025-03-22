@@ -696,7 +696,7 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
         } else if (strcmp(args[0], "2") == 0){
             println("Available music commands");
             println("beep - <frequency> <duration> - Beep at a certain frequency and duration.");
-            println("melody - <frequency> <duration> [play/delete/clear/show] - Make and play a melody!");
+            println("melody - <frequency> <duration> | [play/delete/clear/show] - Make and play a melody!");
             curs_row += 2;
             update_cursor();
         } else if (strcmp(args[0], "3") == 0){
