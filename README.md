@@ -11,5 +11,5 @@ To build Beacon, you need to either be running Linux, or Windows with WSL (Windo
 4. Enter current date & time, or skip to use current RTC time.
 
 ### Screenshots
-![Starting Screen of BeaconOS](screenshots/StartingScreen.png)
+![Starting Screen of BeaconOS](images/StartingScreen.png)
 
