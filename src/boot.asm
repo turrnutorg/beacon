@@ -1,10 +1,3 @@
-# Copyright (c) Turrnut Open Source Organization
-# Under the GPL v3 License
-# See COPYING for information on how you can use this file
-#
-# boot.asm
-#
-
 .set ALIGN,    1<<0
 .set MEMINFO,  1<<1
 .set FLAGS,    ALIGN | MEMINFO
@@ -12,71 +5,182 @@
 .set CHECKSUM, -(MAGIC + FLAGS)
 
 .section .multiboot
+    .align 4
     .long MAGIC
     .long FLAGS
     .long CHECKSUM
 
 .section .text
+.global boot
 .extern start
 .extern keyboard_handler
-.global boot
+.extern _bss_start
+.extern _bss_end
+
+
+
 
 boot:
-    mov $stack, %esp           # Set up stack pointer
-
-    # Remap PIC
-    mov $0x11, %al
-    outb %al, $0x20
-    outb %al, $0xA0
-    mov $0x20, %al
-    outb %al, $0x21
-    mov $0x28, %al
-    outb %al, $0xA1
-    mov $0x04, %al
-    outb %al, $0x21
-    mov $0x02, %al
-    outb %al, $0xA1
-    mov $0x01, %al
-    outb %al, $0x21
-    outb %al, $0xA1
-
-    # Mask everything except IRQ1
-    movb $0xFD, %al            # Mask all except IRQ1 (bit 1 = 0)
-    outb %al, $0x21            # Master PIC
-    movb $0xFF, %al            # Mask all slave IRQs
-    outb %al, $0xA1            # Slave PIC
-
-    # Set ISR for IRQ1 (this part is still basically useless, but keep it)
-    lea idt_table, %eax
-    mov $irq1_handler_entry, %ebx
-    mov %bx, (%eax)
-    shr $16, %ebx
-    mov %bx, 6(%eax)
-    mov $0x08, 2(%eax)
-    movb $0x8E, 4(%eax)
-
-    # Populate rest of IDT with garbage (or placeholders)
-    lea idt_table, %eax
-    mov $256, %ecx
-idt_loop:
-    mov $0, (%eax)
-    add $8, %eax
-    loop idt_loop
-
-    # Load IDT
-    lea idt_descriptor, %eax
-    lidt (%eax)
-
-    # Disable interrupts entirely to prevent triple fault
     cli
 
-    # Jump to C kernel (start the kernel)
+    call setup_gdt
+    mov $stack_top, %esp
+    mov %esp, %ebp
+
+    call zero_bss
+
+    call remap_pic
+    call setup_idt
+
+    sti
+
     call start
 
+boot_hang:
     hlt
-    jmp boot
+    jmp boot_hang
 
+
+# -------------------------------
+# setup GDT
+# -------------------------------
+setup_gdt:
+    lgdt gdt_descriptor
+
+    mov $0x10, %ax
+    mov %ax, %ds
+    mov %ax, %es
+    mov %ax, %fs
+    mov %ax, %gs
+    mov %ax, %ss
+
+    ljmp $0x08, $flush_cs
+
+flush_cs:
+    ret
+
+# -------------------------------
+# zero BSS
+# -------------------------------
+zero_bss:
+    movl $_bss_start, %edi
+    movl $_bss_end, %ecx
+    subl %edi, %ecx
+
+    xor %eax, %eax
+    cld
+    movl %ecx, %edx
+
+    shr $2, %ecx
+    rep stosl
+
+    movl %edx, %ecx
+    andl $3, %ecx
+    rep stosb
+    ret
+
+
+
+
+# -------------------------------
+# remap PIC (keyboard only, IRQ1)
+# -------------------------------
+remap_pic:
+    movb $0x11, %al
+    outb %al, $0x20
+    outb %al, $0xA0
+
+    movb $0x20, %al
+    outb %al, $0x21
+    movb $0x28, %al
+    outb %al, $0xA1
+
+    movb $0x04, %al
+    outb %al, $0x21
+    movb $0x02, %al
+    outb %al, $0xA1
+
+    movb $0x01, %al
+    outb %al, $0x21
+    outb %al, $0xA1
+
+    movb $0xFD, %al      # keyboard only (IRQ1)
+    outb %al, $0x21
+    movb $0xFF, %al
+    outb %al, $0xA1
+    ret
+
+# -------------------------------
+# setup IDT
+# -------------------------------
+setup_idt:
+    lea idt_table, %edi
+    xor %eax, %eax
+    mov $256, %ecx
+    rep stosl
+
+    xor %ebx, %ebx
+.fill_idt:
+    mov $dummy_handler, %eax
+    call set_idt_gate
+    inc %ebx
+    cmp $256, %ebx
+    jne .fill_idt
+
+    mov $keyboard_handler, %eax
+    mov $0x21, %ebx
+    call set_idt_gate
+
+    mov $double_fault_handler, %eax
+    mov $8, %ebx
+    call set_idt_gate
+
+    lea idt_descriptor, %eax
+    lidt (%eax)
+    ret
+
+# -------------------------------
+# set IDT gate
+# eax = handler addr
+# ebx = vector number
+# -------------------------------
+set_idt_gate:
+    push %edx
+    lea idt_table(,%ebx,8), %edi
+
+    movw %ax, (%edi)
+    movw $0x08, 2(%edi)
+    movb $0x00, 4(%edi)
+    movb $0x8E, 5(%edi)
+    shr $16, %eax
+    movw %ax, 6(%edi)
+
+    pop %edx
+    ret
+
+# -------------------------------
+# dummy handler
+# -------------------------------
+dummy_handler:
+    cli
+dummy_hang:
+    hlt
+    jmp dummy_hang
+
+# -------------------------------
+# double fault handler
+# -------------------------------
+double_fault_handler:
+    cli
+df_hang:
+    hlt
+    jmp df_hang
+
+# -------------------------------
+# DATA SECTION
+# -------------------------------
 .section .data
+.align 16
 idt_table:
     .space 256 * 8
 
@@ -84,12 +188,29 @@ idt_descriptor:
     .word 256 * 8 - 1
     .long idt_table
 
-.section .bss
-.space 2097152  # 2 MiB stack
-stack:
+.align 16
+gdt_start:
+    .quad 0x0000000000000000
 
-.section .text
-irq1_handler_entry:
-    # Skip actual IRQ1 handling - just make a placeholder
-    ret
+    # code segment
+    .word 0xFFFF
+    .word 0x0000
+    .byte 0x00
+    .byte 0x9A
+    .byte 0xCF
+    .byte 0x00
+
+    # data segment
+    .word 0xFFFF
+    .word 0x0000
+    .byte 0x00
+    .byte 0x92
+    .byte 0xCF
+    .byte 0x00
+
+gdt_end:
+
+gdt_descriptor:
+    .word gdt_end - gdt_start - 1
+    .long gdt_start
 

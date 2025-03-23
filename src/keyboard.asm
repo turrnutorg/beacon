@@ -1,41 +1,62 @@
-# Copyright (c) Turrnut Open Source Organization
-# Under the GPL v3 License
-# See COPYING for information on how you can use this file
-#
-# keyboard.asm
-#
-.section .data
-.global scancode_buffer
-scancode_buffer:
-    .byte 0                          # holds the last valid scancode
-
 .section .text
 .global keyboard_handler
 .global get_key
 
+.comm key_buffer, 16, 4
+.comm buffer_head, 4, 4
+.comm buffer_tail, 4, 4
+
+
 keyboard_handler:
-    pusha                        # Save all registers
+    cli
+    pusha
 
-    inb $0x60, %al               # Read scancode from keyboard port
-    test $0x80, %al              # Check if the scancode is a key release
-    jnz skip_handler             # Skip releases (we only care about keypresses)
+    inb $0x60, %al
+    leal key_buffer, %edi
+    mov buffer_head, %ebx
+    add %ebx, %edi
+    movb %al, (%edi)
 
-    movzbl %al, %eax             # Zero-extend scancode to 32 bits
-    cmp $58, %al                 # Check if scancode is within valid range (you could adjust this range)
-    ja skip_handler              # Skip invalid scancodes
+    inc %ebx
+    and $0x0F, %ebx          # wrap around (16 entries)
+    mov %ebx, buffer_head
 
-    # Add the scancode to buffer
-    pushl %eax                   # Push scancode onto stack for C function
-    call handle_keypress         # Call the C function
-    add $4, %esp                 # Clean up stack
-
-skip_handler:
-    popa                         # Restore registers
-    movb $0x20, %al              # Send end-of-interrupt to PIC
+    popa
+    movb $0x20, %al          # EOI to master PIC
     outb %al, $0x20
-    iret                         # Return from interrupt
 
+    sti
+    iret
+
+
+.skip_handler:
+    popa
+
+    movb $0x20, %al          # EOI to master PIC
+    outb %al, $0x20
+
+    sti
+    iret
 
 get_key:
-    inb $0x60, %al                   # read from keyboard port
-    ret                              # return the scancode
+    cli
+    mov buffer_tail, %ebx
+    mov buffer_head, %ecx
+    cmp %ecx, %ebx
+    je .no_key               # buffer empty
+
+    leal key_buffer, %edi     # use lea to get the base address
+    add %ebx, %edi
+    movb (%edi), %al         # fetch scancode
+
+    inc %ebx
+    and $0x0F, %ebx          # wrap around
+    mov %ebx, buffer_tail
+
+    sti
+    ret
+
+.no_key:
+    xor %al, %al             # return 0 if no key
+    sti
+    ret
