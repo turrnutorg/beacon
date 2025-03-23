@@ -2,7 +2,7 @@ gccparams = -m32 -nostdlib -fno-builtin -fno-exceptions -fno-leading-underscore
 asmparams = --32
 ldparams = -melf_i386 -s
 
-objs = obj/boot.o obj/os.o obj/console.o obj/keyboard.o obj/port.o obj/screen.o obj/command.o obj/speaker.o obj/string.o
+objs = obj/boot.o obj/os.o obj/console.o obj/keyboard.o  obj/keyboard_asm.o obj/port.o obj/screen.o obj/command.o obj/speaker.o obj/string.o
 
 compile:
 	rm -rf out
@@ -11,7 +11,7 @@ compile:
 	mkdir obj
 	rm -rf $(objs)
 	as $(asmparams) -o obj/boot.o src/boot.asm
-	as $(asmparams) -o obj/keyboard.o src/keyboard.asm
+	as $(asmparams) -o obj/keyboard_asm.o src/keyboard.asm
 
 	gcc $(gccparams) -o obj/console.o -c src/console.c
 	gcc $(gccparams) -o obj/port.o -c src/port.c
