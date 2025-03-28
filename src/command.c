@@ -119,13 +119,15 @@ int macos = 0; // macos mode
          strncpy(args[arg_count], token, next_space - token);
          args[arg_count][next_space - token] = '\0';
          token = next_space + 1;
-         to_lowercase(args[arg_count]);
-         arg_count++;
-     }
- 
-     if (*token != '\0' && arg_count < MAX_ARGS) {
-         strcpy(args[arg_count], token);
-         to_lowercase(args[arg_count]);
+        // uncomment this to make all args lowercase
+        //  to_lowercase(args[arg_count]);
+        arg_count++;
+    }
+    
+    if (*token != '\0' && arg_count < MAX_ARGS) {
+        strcpy(args[arg_count], token);
+        // uncomment this to make all args lowercase
+        //  to_lowercase(args[arg_count]);
          arg_count++;
      }
  
@@ -141,7 +143,7 @@ int macos = 0; // macos mode
      outb(0x64, 0xFE); // Send the ACPI shutdown command (0xFE is used for reset, 0x2002 for ACPI)
      asm volatile ("hlt"); // Halt the CPU if shutdown fails
  }
- 
+
  /**
   * Converts string to integer (shit version)
   */
