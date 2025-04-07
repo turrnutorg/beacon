@@ -11,6 +11,7 @@
  #include "screen.h"
  #include "os.h"
  #include "stdtypes.h"
+ #include "dungeon.h"
  #include "keyboard.h"
  #include "string.h"
  #include "speaker.h"
@@ -40,6 +41,31 @@ int loopStartNote = -1;
 int loopEndNote = -1;
 bool loopEnabled = false;
 int loopCount = 0; // 0 = infinite loops 
+
+void reset() {
+    clear_screen();
+    set_color(GREEN_COLOR, WHITE_COLOR);
+    repaint_screen(GREEN_COLOR, WHITE_COLOR);
+
+    col = 0;
+    row = 0;
+    setup_mode = 0;
+    retain_clock = 1;
+    rainbow_running = 0;
+    input_len = 0;
+
+    println("Copyright (c) 2025 Turrnut Open Source Organization.");
+    println("");
+    println("Type a command (type 'help' for a list):");
+
+    curs_row = 3;
+    curs_col = 0;
+    update_cursor();
+
+    int loop_counter = 0;
+
+    start();
+}
 
 typedef struct {
     uint32_t freq;
@@ -298,9 +324,7 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
     } else if (strcmp(cmd, "reset") == 0) {
         println("Resetting the screen...");
         delay_ms(1000);
-        rainbow_running = 0;
-        input_len = 0;
-        start();
+        reset();
 
     } else if (strcmp(cmd, "rainbow") == 0) {
         if (arg_count == 0) {
@@ -677,7 +701,7 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
         if(arg_count == 0){
             println("Available command categories:");
             println("1 - General commands");
-            println("2 - Music commands");
+            println("2 - Music / Entertainment commands");
             println("3 - Settings commands");
             println("4 - Test commands");
             println("");
@@ -698,8 +722,9 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
         } else if (strcmp(args[0], "2") == 0){
             println("Available music commands");
             println("beep - <frequency> <duration> - Beep at a certain frequency and duration.");
-            println("melody - <frequency> <duration> | [play/delete/clear/show] - Make and play a melody!");
-            curs_row += 2;
+            println("melody - <frequency> <duration> | [play/delete/clear/show] - Make a melody!");
+            println("dungeon - Start the Dungeon Game.");
+            curs_row += 3;
             update_cursor();
         } else if (strcmp(args[0], "3") == 0){
             println("Available settings commands");
@@ -743,6 +768,12 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
                  }
              }
          }
+    } else if (strcmp(cmd, "dungeon") == 0) {
+        println("Loading Dungeon Game... Press a key to begin.");
+        getch();  // if not already declared, make sure getch() is in keyboard.h
+        clear_screen();
+        srand(rand(99999999));  // seed it good and dirty
+        start_dungeon();  // launch the game
     } else if (strcmp(cmd, "setdate") == 0) {
         if (arg_count != 3 && setup_ran == 1) {
             println("Usage: setdate <day(DD)> <month(MM)> <year(YY)>");

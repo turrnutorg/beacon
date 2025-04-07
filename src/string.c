@@ -228,3 +228,37 @@ char *strncat(char *dest, const char *src, size_t max) {
     return dest;
 }
 
+int vsnprintf(char *buffer, uint32_t buf_size, const char *format, va_list args) {
+    char *buf_ptr = buffer;
+    uint32_t remaining = buf_size - 1;
+
+    for (const char *f = format; *f != '\0' && remaining > 0; f++) {
+        if (*f == '%') {
+            f++;
+            if (*f == 'd') {
+                int val = va_arg(args, int);
+                char temp[16];
+                itoa_base(val, temp, 10);
+                for (char *t = temp; *t != '\0' && remaining > 0; t++, remaining--)
+                    *buf_ptr++ = *t;
+            } else if (*f == 's') {
+                char *str = va_arg(args, char *);
+                for (; *str != '\0' && remaining > 0; str++, remaining--)
+                    *buf_ptr++ = *str;
+            } else {
+                *buf_ptr++ = '%';
+                remaining--;
+                if (remaining > 0) {
+                    *buf_ptr++ = *f;
+                    remaining--;
+                }
+            }
+        } else {
+            *buf_ptr++ = *f;
+            remaining--;
+        }
+    }
+
+    *buf_ptr = '\0';
+    return buf_ptr - buffer;
+}

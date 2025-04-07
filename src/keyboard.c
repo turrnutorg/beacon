@@ -13,11 +13,6 @@
  #include "string.h"
  #include "command.h"
  
- #define UP_ARROW    -1
- #define DOWN_ARROW  -2
- #define LEFT_ARROW  -3
- #define RIGHT_ARROW -4
- 
  char input_buffer[INPUT_BUFFER_SIZE];
  size_t input_len = 0;
  int shift = 0;  // fixed this garbage
@@ -312,3 +307,23 @@
      }
  }
  
+    // ----------------------------------------------------------------
+    // Get a character from the keyboard buffer (blocking)
+    // ----------------------------------------------------------------
+
+    int getch() {
+        uint8_t scancode = 0;
+        int code;
+    
+        while (1) {
+            if (buffer_get(&scancode)) {
+                code = capitalize_if_shift(scancode_to_ascii(scancode));
+    
+                // return ALL valid codes including arrows
+                if (code != 0) {
+                    return code;
+                }
+            }
+        }
+    }
+    

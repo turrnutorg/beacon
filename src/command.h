@@ -45,5 +45,6 @@ void set_rtc_date(uint8_t day, uint8_t month, uint8_t year);
 void set_rtc_time(uint8_t hour, uint8_t minute, uint8_t second);
 void repaint_screen(uint8_t fg_color, uint8_t bg_color);
 void update_rainbow();
+void reset();
 
 #endif // COMMAND_H

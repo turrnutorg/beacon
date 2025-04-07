@@ -2,7 +2,7 @@ gccparams = -m32 -nostdlib -fno-builtin -fno-exceptions -fno-leading-underscore
 asmparams = --32
 ldparams = -melf_i386 -s
 
-objs = obj/boot.o obj/os.o obj/console.o obj/keyboard.o  obj/keyboard_asm.o obj/port.o obj/screen.o obj/command.o obj/speaker.o obj/string.o
+objs = obj/boot.o obj/os.o obj/console.o obj/keyboard.o  obj/keyboard_asm.o obj/port.o obj/screen.o obj/command.o obj/speaker.o obj/string.o obj/dungeon.o
 
 compile:
 	rm -rf out
@@ -20,6 +20,7 @@ compile:
 	gcc $(gccparams) -o obj/screen.o -c src/screen.c
 	gcc $(gccparams) -o obj/command.o -c src/command.c
 	gcc $(gccparams) -o obj/speaker.o -c src/speaker.c
+	gcc $(gccparams) -o obj/dungeon.o -c src/dungeon.c
 	gcc $(gccparams) -o obj/string.o -c src/string.c
 
 	ld $(ldparams) -T link.ld -o out/os.bin $(objs)

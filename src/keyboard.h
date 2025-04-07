@@ -9,6 +9,11 @@
  #ifndef KEYBOARD_H
  #define KEYBOARD_H
  
+ #define UP_ARROW    -1
+ #define DOWN_ARROW  -2
+ #define LEFT_ARROW  -3
+ #define RIGHT_ARROW -4
+
  #include "stdtypes.h"
  
  // ---------------------------------
@@ -38,6 +43,7 @@
  char scancode_to_ascii(uint8_t scancode);
  char capitalize_if_shift(char scancode);
  void handle_keypress(uint8_t scancode);
+ int getch();
  
  #endif // KEYBOARD_H
  
