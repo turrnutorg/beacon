@@ -50,8 +50,13 @@
  char currentText[1024];
  char msg[1024];
 
+ int current_fg_color = 2; // default white
+ int current_bg_color = 15; // default black
+ int is_playing = 0; // flag to check if to preserve vars or reset upon reopening
+
 void dungeon_reset() {
  // game variables
+ is_playing = 0; // reset to playing state
  gold = 0;
  healthPotions = 0;
  staminaPotions = 0;
@@ -85,8 +90,8 @@ void dungeon_reset() {
      repaint_screen(4, 4);
      beep(300, 200);  // low tone for damage
      delay_ms(500);
-     set_color(7, 0); // reset to default white on black
-     repaint_screen(7, 0);
+     set_color(current_fg_color, current_bg_color);
+     repaint_screen(current_fg_color, current_bg_color);
  }
  
  void flash_heal() {
@@ -94,8 +99,8 @@ void dungeon_reset() {
      repaint_screen(2, 2);
      beep(1000, 100); // high tone for heal
      delay_ms(500);
-     set_color(7, 0); // reset to default
-     repaint_screen(7, 0);
+     set_color(current_fg_color, current_bg_color);
+     repaint_screen(current_fg_color, current_bg_color);
  }
  
  // clear only the text area (rows 15 to MAX_HEIGHT)
@@ -152,7 +157,7 @@ void dungeon_reset() {
                  ch[0] = buffer[j];
                  ch[1] = '\0';
                  print(ch);
-                 delay_ms(50);
+                 delay_ms(1500);
              }
              lineStart = i + 1;
              while (currentText[lineStart] == ' ' && currentText[lineStart] != '\0')
@@ -290,6 +295,10 @@ void dungeon_reset() {
          if (playerStamina < 0)
              playerStamina = 0;
          gold = gold - (gold / 5);
+         current_fg_color = 2; // green text
+         current_bg_color = 15; // white background
+            set_color(current_fg_color, current_bg_color);
+            repaint_screen(current_fg_color, current_bg_color);
      }
      updateText(msg);
      displayText();
@@ -360,9 +369,13 @@ void dungeon_reset() {
      if (isBoss) {
          set_color(0, 4); // boss mode: black text on red background
          repaint_screen(0, 4);
+         current_fg_color = 0; // black text
+         current_bg_color = 4; // red background
      } else {
          set_color(15, 0); // normal combat: white on black
          repaint_screen(15, 0);
+         current_fg_color = 15; // white text
+         current_bg_color = 0; // black background
      }
  
      if (isBoss)
@@ -420,7 +433,7 @@ void dungeon_reset() {
                  playerHealth = maxHealth;
                  playerStamina = maxStamina;
              } else {
-                 snprintf(msg, sizeof(msg), "You defeated the monster!\nGained %d gold.", loot);
+                 snprintf(msg, sizeof(msg), "You defeated the monster! Gained %d gold.", loot);
              }
              enemiesDefeated++;
              updateText(msg);
@@ -444,16 +457,22 @@ void dungeon_reset() {
                  }
              }
              playerHealth -= (int)damage;
-             flash_damage(); // flash red on damage
+             if (damage > 0) {
+                flash_damage(); // flash red on damage
+             }
              updateText(msg);
              displayText();
-             if (playerHealth <= 0)
+             if (playerHealth <= 0) {
+                 is_playing = 0; // set to not playing
                  endGame();
+             }
          }
      }
      // reset color scheme after combat
      set_color(2, 15); // reset to green on white for text
      repaint_screen(2, 15); // green text on white background
+     current_fg_color = 2; // green text
+     current_bg_color = 15; // white background
      clear_screen();
  }
  
@@ -551,7 +570,6 @@ void dungeon_reset() {
      clear_screen();
  }
  
- // endGame: display game over and shutdown the system
  void endGame() {
      clear_screen();
      row = 0;
@@ -599,6 +617,7 @@ void dungeon_reset() {
             endGame();
         }
         if (action == 3) {
+            is_playing = 1;
             endGame();
         }
         if (action == 2) {
@@ -641,14 +660,19 @@ void dungeon_reset() {
  
  // main: entry point for the game
  int start_dungeon() {
-     srand(123456789);
+     srand(extra_rand());
+     disable_cursor(); // hide the cursor
      clear_screen();
-     updateText("Welcome to the dungeon...");
-     displayText();
-     getch();
-     updateText("Pick a starting item.");
-     displayText();
-     startingItem();
+     if (is_playing == 0) {
+        dungeon_reset(); // reset game state
+        updateText("Welcome to the dungeon...");
+        displayText();
+        getch();
+        updateText("Pick a starting item.");
+        displayText();
+        startingItem();
+     }
+     is_playing = 1; // set to playing state
      displayStatus();
      displayInventory();
      exploreDungeon();

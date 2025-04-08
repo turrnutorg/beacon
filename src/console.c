@@ -8,7 +8,15 @@
 
 #include "console.h"
 #include "screen.h"
+#include "port.h"
 
+#define CMOS_ADDRESS 0x70
+#define CMOS_DATA 0x71
+
+uint8_t read_cmos(uint8_t reg) {
+    outb(CMOS_ADDRESS, reg);
+    return inb(CMOS_DATA);
+}
 
 // Define col and row in this file
 size_t col = 0;
@@ -152,6 +160,25 @@ unsigned int rng_seed = 123456789;
 // call this tae set the seed, if ye give a toss
 void srand(unsigned int seed) {
     rng_seed = seed;
+}
+
+int extra_rand() {
+    uint8_t sec = read_cmos(0x00);
+    uint8_t min = read_cmos(0x02);
+    uint8_t hour = read_cmos(0x04);
+    uint8_t day = read_cmos(0x07);
+    uint8_t mon = read_cmos(0x08);
+    uint8_t year = read_cmos(0x09);
+
+    // mix it all up like a methhead makin potions
+    uint32_t seed = sec + (min << 2) + (hour << 4) + (day << 6) + (mon << 8) + (year << 10);
+
+    // linear congruential generator like yer nan used in '85
+    seed = seed ^ (seed << 13);
+    seed = seed ^ (seed >> 17);
+    seed = seed ^ (seed << 5);
+
+    return (int)(seed & 0x7FFFFFFF); // keep it positive like yer gran before she saw your code
 }
 
 // random number between 0 and max-1

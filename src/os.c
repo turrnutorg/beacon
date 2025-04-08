@@ -15,6 +15,10 @@
 #include "string.h"
 #include "speaker.h"
 
+#define PIT_CHANNEL0 0x40
+#define PIT_COMMAND 0x43
+#define PIT_FREQUENCY 1193182
+
 // External variables from screen.c
 extern volatile struct Char* vga_buffer;
 extern uint8_t default_color;
@@ -44,10 +48,18 @@ const char* get_month_name(uint8_t month) {
     return months[month];
 }
 
-void delay_ms(int milliseconds) {
-    volatile int i = 0;
-    while (i < milliseconds * 1000) {
-        i++;
+void pit_wait(uint16_t ticks) {
+    outb(PIT_COMMAND, 0x30); // channel 0, mode 0, binary
+    outb(PIT_CHANNEL0, ticks & 0xFF); // low byte
+    outb(PIT_CHANNEL0, (ticks >> 8) & 0xFF); // high byte
+
+    // spinlock while bit 5 of port 0x61 is cleared (timer active)
+    while (!(inb(0x61) & 0x20));
+}
+
+void delay_ms(int ms) {
+    while (ms--) {
+        pit_wait(PIT_FREQUENCY / 1000); // wait 1 ms
     }
 }
 
