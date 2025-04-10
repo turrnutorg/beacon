@@ -94,7 +94,8 @@ This will:
 
 ## Credits
 
-Created by Xander Gomez (tuvalutorture)  
+CSA format tools, and game created by tuvalutorture
+Beacon created by Turrnut
 Licensed under the GPL v3 License
 
 ---
