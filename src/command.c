@@ -254,7 +254,7 @@ int macos = 0; // macos mode
  
     } else if (strcmp(cmd, "program") == 0) {
     if (arg_count == 0) {
-        println("Usage: program [load|run]");
+        println("Usage: program [load|run|clear]");
     } else if (strcmp(args[0], "load") == 0) {
         command_load(NULL);
     } else if (strcmp(args[0], "run") == 0) {
@@ -264,6 +264,8 @@ int macos = 0; // macos mode
             println("Executing loaded program...");
             execute_csa();
         }
+    } else if (strcmp(args[0], "clear") == 0) {
+        csa_clear();
     } else {
         println("Invalid argument. Use 'load' or 'run', ya eejit.");
     }
@@ -626,7 +628,7 @@ int macos = 0; // macos mode
         if(arg_count == 0){
             println("Available command categories:");
             println("1 - General commands");
-            println("2 - Music / Entertainment commands");
+            println("2 - Music commands");
             println("3 - Settings commands");
             println("4 - Test commands");
             println("");
@@ -640,16 +642,16 @@ int macos = 0; // macos mode
             println("echo <repetions> <\"text\"> - Echo the text back to the console. /n for new line.");
             println("help - Display this help message.");
             println("reboot - Reboot the system.");
+            println("program [load|run|clear] - Load, run, or de-load a program from Serial (COM1).");
             println("reset - Reset the screen to default.");
             println("shutdown - Shutdown the system.");
-            curs_row += 7;
+            curs_row += 8;
             update_cursor();
         } else if (strcmp(args[0], "2") == 0){
             println("Available music commands");
             println("beep - <frequency> <duration> - Beep at a certain frequency and duration.");
             println("melody - <frequency> <duration> | [play/delete/clear/show] - Make a melody!");
-            println("dungeon - Start the Dungeon Game.");
-            curs_row += 3;
+            curs_row += 2;
             update_cursor();
         } else if (strcmp(args[0], "3") == 0){
             println("Available settings commands");

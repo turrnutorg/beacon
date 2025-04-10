@@ -103,13 +103,6 @@ void csa_feedthru(char byte) {
 
 void csa_tick(void) {
     if (csa_done && !csa_failed) {
-        // dump first 16 payload bytes from the buffer for debug
-        for (int i = 12; i < 12 + 16 && i < CSA_HEADER_SIZE + csa_expected_size; ++i) {
-            char hex[64];
-            snprintf(hex, sizeof(hex), "buffer[%d] = 0x%d", i, csa_buffer[i]);
-            println(hex);
-        }
-
         // clear the destination memory and copy payload
         memset(csa_entrypoint, 0, csa_expected_size);
         memcpy(csa_entrypoint, &csa_buffer[12], csa_expected_size);
@@ -119,20 +112,13 @@ void csa_tick(void) {
         *syscall_ptr_slot = &syscall_table;
 
         println("CSA: Loaded successfully.");
-        {
-            char msg[64];
-            snprintf(msg, sizeof(msg), "Entrypoint @ 0x%d", (uint32_t)csa_entrypoint);
-            println(msg);
-        }
 
         csa_done = 0;
         csa_recv_index = 0;
-        curs_row += 2;
+        curs_row ++;
         curs_col = 0;
         update_cursor();
-
-        delay_ms(10000); // give it a second to breathe
-        println("CSA: Ready to execute. Type 'run' to start.");
+        println("CSA: Ready to execute. Type 'program run' to start.");
         curs_row++;
         update_cursor();
     }
@@ -154,18 +140,35 @@ void command_load(char* args) {
 }
 
 void execute_csa(void) {
-    // dump first 16 bytes from the loaded payload for debug
-    unsigned char* code = (unsigned char*)csa_entrypoint;
-    for (int i = 0; i < 16 && i < csa_expected_size; ++i) {
-        char msg[64];
-        snprintf(msg, sizeof(msg), "code[%d] = 0x%d", i, code[i]);
-        println(msg);
-    }
-
     println("JUMPING TO ENTRYPOINT NOW");
     void (*entry_func)(void) = (void (*)(void))csa_entrypoint;
     entry_func();
     println("BACK FROM ENTRY??!?!? WTF");
     println("CSA: ERROR! Payload returned... what the fuck?");
     reset(); // or enter an infinite halt loop
+}
+
+void csa_clear(void) {
+    if (csa_entrypoint && csa_expected_size > 0) {
+        // zero out loaded program space
+        memset(csa_entrypoint, 0, csa_expected_size);
+        println("CSA: Cleared previous payload.");
+    } else {
+        println("No app loaded!");
+        return;
+    }
+
+    // wipe the syscall pointer just in case
+    syscall_table_t** syscall_ptr_slot = (syscall_table_t**)0x200000;
+    *syscall_ptr_slot = 0;
+
+    // reset CSA state
+    csa_entrypoint = 0;
+    csa_expected_size = -1;
+    csa_recv_index = 0;
+    csa_done = 0;
+    csa_failed = 0;
+
+    set_serial_waiting(0);
+    set_serial_command(1);
 }

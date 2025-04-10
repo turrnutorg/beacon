@@ -9,6 +9,7 @@ void command_load(char* args);  // registers the CSA loader
 void csa_feedthru(char byte);   // internal feedthru handler
 void csa_tick(void);         // internal tick handler for csa loading
 void execute_csa(void);     // executes the loaded CSA binary
+void csa_clear(void);    // clears the CSA buffer and resets state
 
 extern void* csa_entrypoint;    // holds entry address after load
 
