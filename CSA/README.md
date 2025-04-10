@@ -95,7 +95,9 @@ This will:
 ## Credits
 
 CSA format tools, and game created by tuvalutorture
+
 Beacon created by Turrnut
+
 Licensed under the GPL v3 License
 
 ---
