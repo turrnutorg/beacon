@@ -49,7 +49,6 @@ void reset() {
     repaint_screen(GREEN_COLOR, WHITE_COLOR);
     col = 0;
     row = 0;
-    setup_mode = 0;
     retain_clock = 1;
     rainbow_running = 0;
     input_len = 0;
@@ -451,7 +450,6 @@ int macos = 0; // macos mode
             }
         }
         
-    
         // LOOP COMMAND
         else if (strcmp(args[0], "loop") == 0) {
             if (arg_count < 2) {
@@ -479,7 +477,6 @@ int macos = 0; // macos mode
                 }
             }
         }
-        
     
         // EDIT COMMAND
         else if (strcmp(args[0], "edit") == 0) {
@@ -522,7 +519,6 @@ int macos = 0; // macos mode
                 println(buf);
             }
         }
-
     
         // ADD NOTE COMMAND
         else if (arg_count >= 2) {
@@ -550,7 +546,6 @@ int macos = 0; // macos mode
                 println("Added tae melody queue. It's like yer makin' yer own funeral music.");
             }
         }   
-
     
         // INVALID COMMAND
         else {
@@ -662,26 +657,18 @@ int macos = 0; // macos mode
         
 
     } else if (strcmp(cmd, "settime") == 0) {
-        if (arg_count != 3 && setup_ran == 1) {
+        if (arg_count != 3) {
             println("Usage: settime <hour (24h time)> <minute> <second>");
-        } else if (arg_count != 3 && setup_ran == 0) {
-            curs_row += 1;
-            update_cursor();
-            return;
         } else {
             int hour = atoi(args[0]);
              int minute = atoi(args[1]);
              int second = atoi(args[2]);
  
-             if (hour < 0 || hour > 23 || minute < 0 || minute > 59 || second < 0 || second > 59 && setup_ran == 1) {
+             if (hour < 0 || hour > 23 || minute < 0 || minute > 59 || second < 0 || second > 59) {
                  println("Invalid time values. Use 24-hour format, dumbass.");
-             } else if (hour < 0 || hour > 23 || minute < 0 || minute > 59 || second < 0 || second > 59 && setup_ran == 0) {
-                return;
-             }  else {
+             } else {
                  set_rtc_time((uint8_t)hour, (uint8_t)minute, (uint8_t)second);
-                 if (setup_mode == 0) {
                  println("RTC time updated. If it's wrong, that's on you.");
-                 }
              }
          }
     } else if (strcmp(cmd, "dungeon") == 0) {
@@ -691,26 +678,18 @@ int macos = 0; // macos mode
         srand(rand(99999999));  // seed it good and dirty
         start_dungeon();  // launch the game
     } else if (strcmp(cmd, "setdate") == 0) {
-        if (arg_count != 3 && setup_ran == 1) {
+        if (arg_count != 3) {
             println("Usage: setdate <day(DD)> <month(MM)> <year(YY)>");
-        } else if (arg_count != 3 && setup_ran == 0) {
-            curs_row += 1;
-            update_cursor();
-            return;
         } else {
             int day = atoi(args[0]);
             int month = atoi(args[1]);
             int year = atoi(args[2]) % 100; // CMOS stores last two digits
     
-            if (day < 1 || day > 31 || month < 1 || month > 12 || year < 0 || year > 99 && setup_ran == 1) {
+            if (day < 1 || day > 31 || month < 1 || month > 12 || year < 0 || year > 99) {
                 println("Invalid date values, ya donkey.");
-            } if (day < 1 || day > 31 || month < 1 || month > 12 || year < 0 || year > 99 && setup_ran == 0) {
-                return;
             } else {
                 set_rtc_date((uint8_t)day, (uint8_t)month, (uint8_t)year);
-                if (setup_mode == 0) {
                 println("RTC date updated. If it's wrong, you're the moron who typed it.");
-                }
             }
         }
     }     else if (strcmp(cmd, "beep") == 0) {

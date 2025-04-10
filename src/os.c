@@ -16,6 +16,7 @@
 #include "speaker.h"
 #include "velocity.h"
 #include "time.h"
+#include "serial.h"
 
 #define PIT_CHANNEL0 0x40
 #define PIT_COMMAND 0x43
@@ -33,10 +34,7 @@ extern size_t input_len;
 extern size_t curs_row;
 extern size_t curs_col;
 
-// Variables for setup and clock
-int setup_mode = 0;
 int retain_clock = 1;
-int setup_ran = 0;
 
 extern void* mb_info;
 void* g_mb_info = 0;
@@ -56,96 +54,6 @@ void delay_ms(int ms) {
     }
 }
 
-void run_initial_setup() {
-    println("Do you want to run the initial setup? [Just Date & Time] (Y/n):");
-    curs_row++;
-    update_cursor();
-
-    char response = '\0';
-
-    while (response == '\0') {
-        uint8_t scancode;
-        if (buffer_get(&scancode)) {
-            handle_keypress(scancode);
-            response = scancode_to_ascii(scancode);
-        }
-    }
-
-    if (response == 'n' || response == 'N') {
-        println("Skipping initial setup.");
-        curs_row++;
-        input_len = 0;
-        retain_clock = 1;
-        update_cursor();
-        setup_ran = 1;
-        setup_mode = 0;
-        delay_ms(500);
-        clear_screen();
-        return;
-    }
-
-    input_len = 0;
-    setup_ran = 0;
-    clear_screen();
-    row = 0;
-    col = 0;
-
-    setup_mode = 1;
-
-    println("Enter current date (DD MM YY):");
-    input_len = strlen("setdate ");
-    strncpy(input_buffer, "setdate ", INPUT_BUFFER_SIZE);
-    move_cursor_back();
-    curs_col = 0;
-    curs_row = 1;
-    update_cursor();
-
-    while (setup_mode == 1) {
-        uint8_t scancode;
-        if (buffer_get(&scancode)) {
-            handle_keypress(scancode);
-
-            char ascii = scancode_to_ascii(scancode);
-            if (ascii == '\n') {
-                input_buffer[input_len] = '\0';
-                println("");
-                process_command(input_buffer);
-
-                setup_mode = 2;
-
-                curs_row++;
-                println("Enter current time (HH MM SS):");
-                input_len = strlen("settime ");
-                strncpy(input_buffer, "settime ", INPUT_BUFFER_SIZE);
-                move_cursor_back();
-                curs_col = 0;
-                update_cursor();
-            }
-        }
-    }
-
-    while (setup_mode == 2) {
-        uint8_t scancode;
-        if (buffer_get(&scancode)) {
-            handle_keypress(scancode);
-
-            char ascii = scancode_to_ascii(scancode);
-            if (ascii == '\n') {
-                input_buffer[input_len] = '\0';
-                println("");
-                process_command(input_buffer);
-
-                setup_mode = 0;
-            }
-        }
-    }
-
-    setup_ran = 1;
-    setup_mode = 0;
-    delay_ms(500);
-    clear_screen();
-}
-
 void reboot() {
     asm volatile ("cli");
     while (inb(0x64) & 0x02);
@@ -153,12 +61,15 @@ void reboot() {
     asm volatile ("hlt");
 }
 
-void move_cursor_back() {
-    curs_col = 0;
-    update_cursor();
-}
-
 void start() {
+    serial_init();
+    serial_write_string("serial command handler initialized\r\n");
+
+    set_serial_command(1);
+    set_serial_waiting(0);
+    serial_write_string("serial command handler set\r\n");
+    serial_write_string("Beacon booting...\r\n");
+
     clear_screen();
     set_color(GREEN_COLOR, WHITE_COLOR);
     repaint_screen(GREEN_COLOR, WHITE_COLOR);
@@ -166,13 +77,8 @@ void start() {
     enable_bright_bg();
     enable_cursor(0, 15);
 
-    if (setup_ran == 0) {
-        run_initial_setup();
-    }
-
     col = 0;
     row = 0;
-    setup_mode = 0;
     retain_clock = 1;
 
     println("Copyright (c) 2025 Turrnut Open Source Organization.");
@@ -204,5 +110,6 @@ void start() {
         }
 
         update_rainbow(); // whatever insane animation ye got going
+        serial_poll(); // always poll for serial input
     }
 }

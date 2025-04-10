@@ -168,7 +168,6 @@
  
      // BACKSPACE HANDLING
      if (ascii == '\b') {
-         if (setup_mode == 0) {
              if (input_len > 0) {
                  input_len--;
  
@@ -194,7 +193,6 @@
  
                  update_cursor();
              }
-         }
      }
  
      // ARROW KEYS

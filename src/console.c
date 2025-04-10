@@ -9,6 +9,7 @@
 #include "console.h"
 #include "screen.h"
 #include "port.h"
+#include "serial.h"
 
 #define CMOS_ADDRESS 0x70
 #define CMOS_DATA 0x71
@@ -81,6 +82,8 @@ void printc(char character)
     };
 
     col++;  // Move to the next column
+
+    serial_write(character);  // Send the character to the serial port
 }
 
 void print(const char *str)
@@ -96,6 +99,7 @@ void println(const char *str)
     print(str);
     newline();  // Move to a new line after printing
     update_cursor();
+    serial_write('\n');  // Send newline to serial port
 }
 
 void set_color(uint8_t foreground, uint8_t background)
@@ -112,6 +116,10 @@ void move_cursor_left()
     }
 }
 
+void move_cursor_back() {
+    curs_col = 0;
+    update_cursor();
+}
 
 void int_to_str(int value, char* str, int min_digits) {
     char buffer[16];
