@@ -10,13 +10,14 @@
 #include "screen.h"
 #include "keyboard.h"
 #include "console.h"
-#include "stdtypes.h"
 #include "command.h"
 #include "string.h"
 #include "speaker.h"
 #include "velocity.h"
 #include "time.h"
 #include "serial.h"
+#include "csa.h"
+#include <stdint.h>
 
 #define PIT_CHANNEL0 0x40
 #define PIT_COMMAND 0x43
@@ -63,6 +64,7 @@ void reboot() {
 
 void start() {
     serial_init();
+    serial_toggle();
     serial_write_string("serial command handler initialized\r\n");
 
     set_serial_command(1);
@@ -111,5 +113,6 @@ void start() {
 
         update_rainbow(); // whatever insane animation ye got going
         serial_poll(); // always poll for serial input
+        csa_tick(); // <- call the safe csa processor here
     }
 }

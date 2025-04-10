@@ -2,7 +2,7 @@
 #include "port.h"
 #include "screen.h"
 #include "string.h"
-#include "stdtypes.h"
+#include <stdint.h>
 
 extern uint8_t default_color;
 

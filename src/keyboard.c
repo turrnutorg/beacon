@@ -12,6 +12,7 @@
  #include "console.h"
  #include "string.h"
  #include "command.h"
+ #include <stdint.h>
  
  char input_buffer[INPUT_BUFFER_SIZE];
  size_t input_len = 0;

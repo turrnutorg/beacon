@@ -1,6 +1,8 @@
 #ifndef SERIAL_H
 #define SERIAL_H
 
+#include <stdint.h> // because you're not a total moron (hopefully)
+
 // typedef for the feedthru callback function
 typedef void (*serial_feedthru_callback_t)(char);
 
@@ -35,4 +37,13 @@ void set_serial_feedthru_callback(serial_feedthru_callback_t callback);
 // it as a command (if enabled) or passes it straight through
 void serial_poll(void);
 
-#endif // SERIAL_CUSTOM_H
+// toggle the serial port on/off
+void serial_toggle(void);
+
+// 💾 load a .csa file over serial, interpret header, store binary into memory
+void start_csa_load(void);
+
+// 🚀 run previously loaded .csa by jumping to its entrypoint
+void run_csa_entry(void);
+
+#endif // SERIAL_H

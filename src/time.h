@@ -1,7 +1,8 @@
 #ifndef TIME_H
 #define TIME_H
 
-#include "stdtypes.h"
+#include <stdint.h>
+#include <stddef.h> // for size_t
 
 void display_datetime();
 void read_rtc_datetime(uint8_t* hour, uint8_t* minute, uint8_t* second,

@@ -9,7 +9,7 @@
 #ifndef COMMAND_H
 #define COMMAND_H
 
-#include "stdtypes.h"
+#include <stdint.h>
 
 // Constants
 #define INPUT_BUFFER_SIZE 256

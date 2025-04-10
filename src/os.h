@@ -9,7 +9,7 @@
 #ifndef OS_H
 #define OS_H
 
-#include "stdtypes.h"
+#include <stdint.h>
 
 extern int retain_clock;
 

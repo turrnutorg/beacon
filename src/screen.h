@@ -9,7 +9,8 @@
 #ifndef SCREEN_H
 #define SCREEN_H
 
-#include "stdtypes.h"
+#include <stdint.h>
+#include <stddef.h> // for size_t
 
 // VGA constants
 #define VGA_ADDRESS 0xB8000

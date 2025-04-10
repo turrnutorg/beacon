@@ -1,9 +1,10 @@
 #include "serial.h"
 #include "port.h"
-#include "stdtypes.h"
 #include "string.h"
 #include "command.h"
+#include "console.h"
 #include <stddef.h>
+#include <stdint.h>
 
 #define SERIAL_INPUT_BUFFER_SIZE 256
 
@@ -18,10 +19,21 @@ static int serial_input_index = 0;
 // serial_waiting flag tells the main loop that some program is waiting on serial input.
 static int serial_command_enabled = 1;
 static int serial_waiting = 0;
+static int serial_enabled = 0; // set to 0 to disable serial completely
 
 // pointer for feedthru callback for any waiting process
 typedef void (*serial_feedthru_callback_t)(char);
 static serial_feedthru_callback_t feedthru_callback = NULL;
+
+void serial_toggle() {
+    if (serial_enabled) {
+        println("Serial port disabled.");
+    }
+    serial_enabled = !serial_enabled;
+    if (serial_enabled) {
+        println("Serial port enabled.");
+    }
+}
 
 // functions tae set flags and the feedthru callback
 void set_serial_command(int enabled) {
@@ -52,7 +64,10 @@ int serial_received(void) {
 
 // nonblocking read: returns 0 if no data is available
 char serial_read(void) {
+    if (!serial_enabled) return 0; // don't read if serial is disabled
     if (serial_received())
+        serial_write('\r'); // move to the start of the line
+        serial_write('\n'); // move to the next line
         return inb(COM1_PORT);
     return 0;
 }
@@ -62,13 +77,13 @@ int serial_is_transmit_empty(void) {
 }
 
 void serial_write(char a) {
+    if (!serial_enabled) return; // don't write if serial is disabled
     while (!serial_is_transmit_empty())
         ; // wait for transmit buffer to empty
     outb(COM1_PORT, a);
 }
 
 void serial_write_string(const char* str) {
-    serial_write('\r'); // move to the start of the line
     serial_write('\n'); // move to the next line
     while (*str)
         serial_write(*str++);
@@ -100,6 +115,7 @@ void serial_command_handler(char data) {
 
 // call this in yer main loop; it nonblockingly polls for serial input always
 void serial_poll(void) {
+    if (!serial_enabled) return; // don't poll if serial is disabled
     if (serial_received()) {
         char data = inb(COM1_PORT);
         // if some program is waiting or command processing is disabled,
@@ -114,3 +130,4 @@ void serial_poll(void) {
         }
     }
 }
+

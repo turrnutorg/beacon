@@ -14,7 +14,8 @@
  #define LEFT_ARROW  -3
  #define RIGHT_ARROW -4
 
- #include "stdtypes.h"
+ #include <stdint.h>
+ #include <stddef.h>
  
  // ---------------------------------
  // Buffer sizes

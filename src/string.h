@@ -10,9 +10,9 @@
 #ifndef STRING_H
 #define STRING_H
 
-#include "stdtypes.h" 
+#include <stdint.h>
 #include <stdarg.h>
-
+#include <stddef.h> // for size_t
 
 char* strncpy(char* dest, const char* src, size_t n);
 size_t strlen(const char* str);
@@ -28,5 +28,6 @@ char *strncat(char *dest, const char *src, size_t max);
 int vsnprintf(char *buffer, uint32_t buf_size, const char *format, va_list args);
 int atoi(const char* str);
 void* memset(void* ptr, int value, size_t num);
+void* memcpy(void* dest, const void* src, unsigned int n);
 
 #endif // STRING_H

@@ -10,12 +10,13 @@
  #include "console.h"
  #include "screen.h"
  #include "os.h"
- #include "stdtypes.h"
  #include "velocity.h"
  #include "keyboard.h"
  #include "string.h"
  #include "speaker.h"
  #include "time.h"
+ #include "csa.h"
+ #include "serial.h"
  #include <stdint.h>
  #include <stdarg.h>
  #include <stdbool.h>
@@ -23,7 +24,6 @@
  // External variables from os.c or other modules
  extern size_t curs_row;
  extern size_t curs_col;
- extern int start_dungeon();
 
  extern void* g_mb_info;
 
@@ -252,6 +252,21 @@ int macos = 0; // macos mode
          delay_ms(1000);
          shutdown();
  
+    } else if (strcmp(cmd, "program") == 0) {
+    if (arg_count == 0) {
+        println("Usage: program [load|run]");
+    } else if (strcmp(args[0], "load") == 0) {
+        command_load(NULL);
+    } else if (strcmp(args[0], "run") == 0) {
+        if (csa_entrypoint == NULL) {
+            println("Error: No program loaded, ya fuckin goblin.");
+        } else {
+            println("Executing loaded program...");
+            execute_csa();
+        }
+    } else {
+        println("Invalid argument. Use 'load' or 'run', ya eejit.");
+    }
     } else if (strcmp(cmd, "color") == 0) {
         if (arg_count != 2) {
             println("Usage: color <text color> <background color>");
@@ -671,12 +686,6 @@ int macos = 0; // macos mode
                  println("RTC time updated. If it's wrong, that's on you.");
              }
          }
-    } else if (strcmp(cmd, "dungeon") == 0) {
-        println("Loading Dungeon Game... Press a key to begin.");
-        getch();  // if not already declared, make sure getch() is in keyboard.h
-        clear_screen();
-        srand(rand(99999999));  // seed it good and dirty
-        start_dungeon();  // launch the game
     } else if (strcmp(cmd, "setdate") == 0) {
         if (arg_count != 3) {
             println("Usage: setdate <day(DD)> <month(MM)> <year(YY)>");
@@ -708,7 +717,22 @@ int macos = 0; // macos mode
                 beep(freq, duration);
             }
         }
-    } else if (strcmp(cmd, "") == 0) {
+    } else if (strcmp(cmd, "serial") == 0) {
+        if (arg_count == 0) {
+            println("Usage: serial [toggle|cmdenable|cmddisable]");
+        } else if (strcmp(args[0], "cmdenable") == 0) {
+            set_serial_command(1);
+            println("Serial command processing enabled.");
+        } else if (strcmp(args[0], "cmddisable") == 0) {
+            set_serial_command(0);
+            println("Serial command processing disabled.");
+        } else if (strcmp(args[0], "toggle") == 0) {
+            serial_toggle();
+        } else {
+            println("Invalid argument.");
+        }
+    }
+    else if (strcmp(cmd, "") == 0) {
         return; // Do nothing if the command is empty
      } else {
          move_cursor_back();

@@ -8,7 +8,7 @@
 
 #ifndef port_header
 #define port_header
-#include "stdtypes.h"
+#include <stdint.h>
 
 // 8-bit Port
 typedef struct {
