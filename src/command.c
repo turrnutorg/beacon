@@ -11,10 +11,11 @@
  #include "screen.h"
  #include "os.h"
  #include "stdtypes.h"
- #include "dungeon.h"
+ #include "velocity.h"
  #include "keyboard.h"
  #include "string.h"
  #include "speaker.h"
+ #include "time.h"
  #include <stdint.h>
  #include <stdarg.h>
  #include <stdbool.h>
@@ -22,9 +23,9 @@
  // External variables from os.c or other modules
  extern size_t curs_row;
  extern size_t curs_col;
- 
- // External functions ye need declared or they’ll cry
- uint8_t cmos_read(uint8_t reg);
+ extern int start_dungeon();
+
+ extern void* g_mb_info;
 
  // Command history buffer
  char command_history[COMMAND_HISTORY_SIZE][INPUT_BUFFER_SIZE];
@@ -46,24 +47,12 @@ void reset() {
     clear_screen();
     set_color(GREEN_COLOR, WHITE_COLOR);
     repaint_screen(GREEN_COLOR, WHITE_COLOR);
-
     col = 0;
     row = 0;
     setup_mode = 0;
     retain_clock = 1;
     rainbow_running = 0;
     input_len = 0;
-
-    println("Copyright (c) 2025 Turrnut Open Source Organization.");
-    println("");
-    println("Type a command (type 'help' for a list):");
-
-    curs_row = 3;
-    curs_col = 0;
-    update_cursor();
-
-    int loop_counter = 0;
-
     start();
 }
 
@@ -101,8 +90,6 @@ void update_rainbow() {
             delay_ms(100); // Speed of color change (adjustable)
         }
     }
-
-
 
 int macos = 0; // macos mode
 
@@ -168,91 +155,6 @@ int macos = 0; // macos mode
      while (inb(0x64) & 0x02); // Wait until the keyboard controller is ready
      outb(0x64, 0xFE); // Send the ACPI shutdown command (0xFE is used for reset, 0x2002 for ACPI)
      asm volatile ("hlt"); // Halt the CPU if shutdown fails
- }
-
- /**
-  * Converts string to integer (shit version)
-  */
- int atoi(const char* str) {
-     int res = 0;
-     int sign = 1;
-     int i = 0;
- 
-     if (str[0] == '-') {
-         sign = -1;
-         i++;
-     }
- 
-     for (; str[i] != '\0'; ++i) {
-         if (str[i] < '0' || str[i] > '9')
-             return 0; // not a number? yer getting zero
-         res = res * 10 + str[i] - '0';
-     }
- 
-     return sign * res;
- }
- 
- /**
-  * Writes the RTC time directly to CMOS
-  */
- void set_rtc_time(uint8_t hour, uint8_t minute, uint8_t second) {
-     uint8_t status_b = cmos_read(0x0B);
-     status_b &= ~0x04; // Use BCD format just to stay simple
-     outb(0x70, 0x0B);
-     outb(0x71, status_b);
- 
-     outb(0x70, 0x00);
-     outb(0x71, ((second / 10) << 4) | (second % 10));
- 
-     outb(0x70, 0x02);
-     outb(0x71, ((minute / 10) << 4) | (minute % 10));
- 
-     outb(0x70, 0x04);
-     outb(0x71, ((hour / 10) << 4) | (hour % 10));
- }
-
- void set_rtc_date(uint8_t day, uint8_t month, uint8_t year) {
-
-    // stop updates
-    outb(0x70, 0x0B);
-    uint8_t prev_b = inb(0x71);
-    outb(0x70, 0x0B);
-    outb(0x71, prev_b | 0x80); // inhibit updates
-
-    // write values
-    outb(0x70, 0x07);
-    outb(0x71, ((day / 10) << 4) | (day % 10));
-
-    outb(0x70, 0x08);
-    outb(0x71, ((month / 10) << 4) | (month % 10));
-
-    outb(0x70, 0x09);
-    outb(0x71, ((year / 10) << 4) | (year % 10));
-
-    // resume updates
-    outb(0x70, 0x0B);
-    outb(0x71, prev_b & ~0x80);
-}
-
-
-void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
-    uint8_t color = (bg_color << 4) | fg_color;
-
-    for (int i = 0; i < NUM_ROWS * NUM_COLS; i++) {
-        vga_buffer[i].color = color;
-    }
-}
-
- /**
-  * Advance cursor after command
-  */
- static void newRowAfterCommand() {
-     curs_row++;
-     if (curs_row >= NUM_ROWS) {
-         scroll_screen();
-         curs_row = NUM_ROWS - 1;
-     }
-     update_cursor();
  }
  
  /**
@@ -647,14 +549,27 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
                 melodyQueueSize++;
                 println("Added tae melody queue. It's like yer makin' yer own funeral music.");
             }
-        }
+        }   
 
     
         // INVALID COMMAND
         else {
             println("Invalid; discarded. Ye want tae try speakin' English next time?");
         }
-    } else if (strcmp(cmd, "poem") == 0) {
+    } else if (strcmp(cmd, "velocity") == 0) {
+        if (arg_count == 0)
+            println("Coming soon...");
+        else if (arg_count >= 1) {
+             if (strcmp(args[0], "enable") == 0) {
+                velocity_init(g_mb_info);
+                println("If you're seeing this, it didn't work.");
+             } else {
+                println("Velocity is a measure of speed. What's your point?");
+             }
+        }
+    }
+    
+    else if (strcmp(cmd, "poem") == 0) {
         retain_clock = 0;
         // Clear the screen
         clear_screen();
@@ -737,7 +652,8 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
             println("macos - no need for ths command... this is not MacOS...");
             println("poem - display the Beacon Poem");
             println("test [argument] - Test command with optional argument.");
-            curs_row += 3;
+            println("velocity - Enable velocity mode. Coming soon...");
+            curs_row += 4;
             update_cursor();
         } else {
             println("Usage: help [number]");
@@ -821,6 +737,11 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
          print(cmd);
          println("\" is not a known command or executable program.");
      }
-     newRowAfterCommand();
+     curs_row++;
+     if (curs_row >= NUM_ROWS) {
+         scroll_screen();
+         curs_row = NUM_ROWS - 1;
+     }
+     update_cursor();
  }
  

@@ -5,11 +5,12 @@
 # boot.asm
 #
 
-.set ALIGN,    1<<0
-.set MEMINFO,  1<<1
-.set FLAGS,    ALIGN | MEMINFO
-.set MAGIC,    0x1BADB002
-.set CHECKSUM, -(MAGIC + FLAGS)
+.set ALIGN,        1<<0
+.set MEMINFO,      1<<1
+.set FRAMEBUFFER,  1<<2
+.set FLAGS,        ALIGN | MEMINFO 
+.set MAGIC,        0x1BADB002
+.set CHECKSUM,     -(MAGIC + FLAGS)
 
 .section .multiboot
     .align 4
@@ -24,9 +25,6 @@
 .extern _bss_start
 .extern _bss_end
 
-
-
-
 boot:
     cli
 
@@ -35,6 +33,8 @@ boot:
     mov %esp, %ebp
 
     call zero_bss
+
+    mov %ebx, mb_info
 
     call remap_pic
     call setup_idt
@@ -221,3 +221,6 @@ gdt_descriptor:
     .word gdt_end - gdt_start - 1
     .long gdt_start
 
+.globl mb_info
+mb_info:
+    .long 0

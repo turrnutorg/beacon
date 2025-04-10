@@ -26,6 +26,7 @@ char* strstr(const char* haystack, const char* needle);
 int snprintf(char *buffer, uint32_t buf_size, const char *format, ...);
 char *strncat(char *dest, const char *src, size_t max);
 int vsnprintf(char *buffer, uint32_t buf_size, const char *format, va_list args);
-int extra_rand();
+int atoi(const char* str);
+void* memset(void* ptr, int value, size_t num);
 
 #endif // STRING_H

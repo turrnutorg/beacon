@@ -46,13 +46,16 @@ void println(const char *str);
 void print_at(const char* message, int row, int col);
 void set_color(uint8_t fg, uint8_t bg);
 
-
 void move_cursor_left();
 void move_cursor_right();
 
 void int_to_string(int number, char *str);
 
-void* memset(void* ptr, int value, size_t num);
 unsigned int rand(unsigned int max);
+void srand(unsigned int seed);
+int extra_rand();
+
+void gotoxy(size_t x, size_t y);
+void repaint_screen(uint8_t fg_color, uint8_t bg_color);
 
 #endif

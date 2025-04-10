@@ -146,12 +146,12 @@ void int_to_str(int value, char* str, int min_digits) {
     str[j] = '\0';
 }
 
-void* memset(void* ptr, int value, size_t num) {
-    unsigned char* p = (unsigned char*)ptr;
-    for (size_t i = 0; i < num; i++) {
-        p[i] = (unsigned char)value;
+void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
+    uint8_t color = (bg_color << 4) | fg_color;
+
+    for (int i = 0; i < NUM_ROWS * NUM_COLS; i++) {
+        vga_buffer[i].color = color;
     }
-    return ptr;
 }
 
 // global seed, cos why the fuck not
@@ -187,4 +187,11 @@ unsigned int rand(unsigned int max) {
     return (rng_seed >> 16) % max;
 }
 
-
+ // implement gotoxy: set os print positions and update hardware cursor
+ void gotoxy(size_t x, size_t y) {
+    row = y;         // console module's current row
+    col = x;         // console module's current col
+    curs_row = y;    // vga cursor row
+    curs_col = x;    // vga cursor col
+    update_cursor();
+}

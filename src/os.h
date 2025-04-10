@@ -23,6 +23,4 @@ void move_cursor_back();
 void delay_ms(int milliseconds);
 void reboot();
 
-void display_datetime();
-
 #endif // OS_H

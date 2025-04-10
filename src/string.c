@@ -262,3 +262,33 @@ int vsnprintf(char *buffer, uint32_t buf_size, const char *format, va_list args)
     *buf_ptr = '\0';
     return buf_ptr - buffer;
 }
+
+ /**
+  * Converts string to integer (shit version)
+  */
+ int atoi(const char* str) {
+    int res = 0;
+    int sign = 1;
+    int i = 0;
+
+    if (str[0] == '-') {
+        sign = -1;
+        i++;
+    }
+
+    for (; str[i] != '\0'; ++i) {
+        if (str[i] < '0' || str[i] > '9')
+            return 0; // not a number? yer getting zero
+        res = res * 10 + str[i] - '0';
+    }
+
+    return sign * res;
+}
+
+void* memset(void* ptr, int value, size_t num) {
+    unsigned char* p = (unsigned char*)ptr;
+    for (size_t i = 0; i < num; i++) {
+        p[i] = (unsigned char)value;
+    }
+    return ptr;
+}
