@@ -1,8 +1,8 @@
-gccparams = -m32 -nostdlib -fno-builtin -fno-exceptions -fno-leading-underscore
+gccparams = -m32 -nostdlib -fno-builtin -fno-exceptions -fno-leading-underscore -ffreestanding
 asmparams = --32
 ldparams = -melf_i386 -s
 
-objs = obj/boot.o obj/os.o obj/console.o obj/keyboard.o  obj/keyboard_asm.o obj/port.o obj/screen.o obj/command.o obj/speaker.o obj/string.o obj/dungeon.o obj/velocity.o obj/time.o
+objs = obj/boot.o obj/os.o obj/console.o obj/keyboard.o obj/keyboard_asm.o obj/port.o obj/screen.o obj/command.o obj/speaker.o obj/string.o obj/dungeon.o obj/velocity.o obj/time.o obj/serial.o
 
 compile:
 	rm -rf out
@@ -24,6 +24,7 @@ compile:
 	gcc $(gccparams) -o obj/time.o -c src/time.c
 	gcc $(gccparams) -o obj/velocity.o -c src/velocity.c
 	gcc $(gccparams) -o obj/string.o -c src/string.c
+	gcc $(gccparams) -o obj/serial.o -c src/serial.c
 
 	ld $(ldparams) -T link.ld -o out/os.bin $(objs)
 	cp out/os.bin build/boot/os.bin
