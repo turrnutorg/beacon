@@ -1,3 +1,11 @@
+/**
+ * Copyright (c) Turrnut Open Source Organization
+ * Under the GPL v3 License
+ * See COPYING for information on how you can use this file
+ * 
+ * serial.h
+ */
+
 #ifndef SERIAL_H
 #define SERIAL_H
 
@@ -39,11 +47,5 @@ void serial_poll(void);
 
 // toggle the serial port on/off
 void serial_toggle(void);
-
-// 💾 load a .csa file over serial, interpret header, store binary into memory
-void start_csa_load(void);
-
-// 🚀 run previously loaded .csa by jumping to its entrypoint
-void run_csa_entry(void);
 
 #endif // SERIAL_H

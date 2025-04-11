@@ -45,6 +45,7 @@
  char capitalize_if_shift(char scancode);
  void handle_keypress(uint8_t scancode);
  int getch();
+ int getch_nb(); // non-blocking version, returns -1 if no key
  
  #endif // KEYBOARD_H
  

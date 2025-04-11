@@ -43,11 +43,9 @@ void newline();
 void printc(char c);
 void print(const char *str);
 void println(const char *str);
-void print_at(const char* message, int row, int col);
 void set_color(uint8_t fg, uint8_t bg);
 
 void move_cursor_left();
-void move_cursor_right();
 void move_cursor_back();
 
 void int_to_string(int number, char *str);

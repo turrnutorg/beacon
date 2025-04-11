@@ -670,9 +670,6 @@ int macos = 0; // macos mode
         } else {
             println("Usage: help [number]");
         }
-        
-        
-
     } else if (strcmp(cmd, "settime") == 0) {
         if (arg_count != 3) {
             println("Usage: settime <hour (24h time)> <minute> <second>");

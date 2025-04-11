@@ -1,25 +1,9 @@
-/**
- * Copyright (c) Turrnut Open Source Organization
- * Under the GPL v3 License
- * See COPYING for information on how you can use this file
- * 
- * csa.h
- */
-
-#ifndef CSA_H
-#define CSA_H
+#ifndef SYSCALL_H
+#define SYSCALL_H
 
 #include <stdint.h>
-
-// public interface
-
-void command_load(char* args);  // registers the CSA loader
-void csa_feedthru(char byte);   // internal feedthru handler
-void csa_tick(void);         // internal tick handler for csa loading
-void execute_csa(void);     // executes the loaded CSA binary
-void csa_clear(void);    // clears the CSA buffer and resets state
-
-extern void* csa_entrypoint;    // holds entry address after load
+#include <stddef.h>
+#include <stdarg.h>
 
 typedef void (*serial_feedthru_callback_t)(char);
 
@@ -98,4 +82,4 @@ typedef struct syscall_table {
     void (*enable_bright_bg)(void);
 } syscall_table_t;
 
-#endif // CSA_H
+#endif

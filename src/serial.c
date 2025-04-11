@@ -1,3 +1,11 @@
+/**
+ * Copyright (c) Turrnut Open Source Organization
+ * Under the GPL v3 License
+ * See COPYING for information on how you can use this file
+ * 
+ * serial.c
+ */
+
 #include "serial.h"
 #include "port.h"
 #include "string.h"

@@ -1,18 +1,27 @@
+/**
+ * Copyright (c) Turrnut Open Source Organization
+ * Under the GPL v3 License
+ * See COPYING for information on how you can use this file
+ * 
+ * csa.c
+ */
+
 #include "serial.h"
 #include "string.h"
 #include "command.h"
 #include "console.h"
-#include "csa.h"
 #include <stdint.h>
 #include "syscall.h"
+#include "port.h"
 #include "screen.h"
 #include "time.h"
 #include "keyboard.h"
 #include "speaker.h"
 #include "os.h"  // assuming reset() + extra_rand() are here
+#include "csa.h"
 
-// set up the syscall table
 syscall_table_t syscall_table = {
+    // --- core sys ---
     .print = print,
     .gotoxy = gotoxy,
     .clear_screen = clear_screen,
@@ -27,13 +36,59 @@ syscall_table_t syscall_table = {
     .extra_rand = extra_rand,
     .read_rtc_datetime = read_rtc_datetime,
     .reset = reset,
+    .beep = beep,
+    .getch_nb = getch_nb,
+
+    // --- string/format/mem ---
     .snprintf = snprintf,
     .vsnprintf = vsnprintf,
     .strcpy = strcpy,
-    .strcmp = strcmp,
+    .strncpy = strncpy,
+    .strcat = strcat,
+    .strncat = strncat,
     .strlen = strlen,
-    .beep = beep,
+    .strcmp = strcmp,
     .strncmp = strncmp,
+    .strchr = strchr,
+    .strrchr = strrchr,
+    .strstr = strstr,
+    .strtok = strtok,
+    .memcpy = memcpy,
+    .memset = memset,
+    .memcmp = memcmp,
+    .itoa = itoa,
+    .itoa_base = itoa_base,
+    .atoi = atoi,
+    .strtol = strtol,
+
+    // --- rtc / datetime ---
+    .display_datetime = display_datetime,
+    .set_rtc_date = set_rtc_date,
+    .set_rtc_time = set_rtc_time,
+    .get_month_name = get_month_name,
+
+    // --- serial fuckery ---
+    .serial_init = serial_init,
+    .serial_received = serial_received,
+    .serial_read = serial_read,
+    .serial_is_transmit_empty = serial_is_transmit_empty,
+    .serial_write = serial_write,
+    .serial_write_string = serial_write_string,
+    .set_serial_command = set_serial_command,
+    .set_serial_waiting = set_serial_waiting,
+    .set_serial_feedthru_callback = set_serial_feedthru_callback,
+    .serial_poll = serial_poll,
+    .serial_toggle = serial_toggle,
+
+    // --- console i/o extras ---
+    .putchar = putchar,
+    .printc = printc,
+    .println = println,
+    .newline = newline,
+    .move_cursor_left = move_cursor_left,
+    .move_cursor_back = move_cursor_back,
+    .enable_cursor = enable_cursor,
+    .enable_bright_bg = enable_bright_bg
 };
 
 #define CSA_MAGIC 0xC0DEFACE
@@ -143,7 +198,6 @@ void execute_csa(void) {
     println("JUMPING TO ENTRYPOINT NOW");
     void (*entry_func)(void) = (void (*)(void))csa_entrypoint;
     entry_func();
-    println("BACK FROM ENTRY??!?!? WTF");
     println("CSA: ERROR! Payload returned... what the fuck?");
     reset(); // or enter an infinite halt loop
 }
@@ -155,7 +209,6 @@ void csa_clear(void) {
         println("CSA: Cleared previous payload.");
     } else {
         println("No app loaded!");
-        return;
     }
 
     // wipe the syscall pointer just in case

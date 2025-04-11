@@ -325,4 +325,23 @@
             }
         }
     }
+
+    // ----------------------------------------------------------------
+    // Get a character from the keyboard buffer (non-blocking)
+    // Returns -1 if no input
+    // ----------------------------------------------------------------
+    int getch_nb() {
+        uint8_t scancode = 0;
+        int code;
+
+        if (buffer_get(&scancode)) {
+            code = capitalize_if_shift(scancode_to_ascii(scancode));
+            if (code != 0) {
+                return code;
+            }
+        }
+
+        return -1;
+    }
+
     

@@ -86,9 +86,6 @@ zero_bss:
     rep stosb
     ret
 
-
-
-
 # -------------------------------
 # remap PIC (keyboard only, IRQ1)
 # -------------------------------

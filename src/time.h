@@ -1,3 +1,11 @@
+/**
+ * Copyright (c) Turrnut Open Source Organization
+ * Under the GPL v3 License
+ * See COPYING for information on how you can use this file
+ * 
+ * time.h
+ */
+
 #ifndef TIME_H
 #define TIME_H
 
