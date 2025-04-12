@@ -10,7 +10,6 @@
  #include "console.h"
  #include "screen.h"
  #include "os.h"
- #include "velocity.h"
  #include "keyboard.h"
  #include "string.h"
  #include "speaker.h"
@@ -27,6 +26,7 @@
 
  extern void* g_mb_info;
 
+ extern int simas_main(void);
  // Command history buffer
  char command_history[COMMAND_HISTORY_SIZE][INPUT_BUFFER_SIZE];
  int command_history_index = 0;     // Index to store the next command
@@ -36,34 +36,9 @@ int rainbow_running = 0; // 0 means stopped, 1 means running
 int rainbow_mode = 0; // 0 for both, 1 for text, 2 for background
 unsigned long last_rainbow_update = 0; // For timing the updates
 
-#define MELODY_QUEUE_SIZE 128
-
-int loopStartNote = -1;
-int loopEndNote = -1;
-bool loopEnabled = false;
-int loopCount = 0; // 0 = infinite loops 
-
 void reset() {
-    clear_screen();
-    set_color(GREEN_COLOR, WHITE_COLOR);
-    repaint_screen(GREEN_COLOR, WHITE_COLOR);
-    col = 0;
-    row = 0;
-    retain_clock = 1;
-    rainbow_running = 0;
-    input_len = 0;
     start();
 }
-
-typedef struct {
-    uint32_t freq;
-    uint32_t duration;
-    uint8_t fg; // text color
-    uint8_t bg; // background color   
-} MelodyNote;
-
-MelodyNote melodyQueue[MELODY_QUEUE_SIZE];
-int melodyQueueSize = 0;
 
 void update_rainbow() {
         if (!rainbow_running) return;  // Do nothing if rainbow isn't running
@@ -294,294 +269,8 @@ int macos = 0; // macos mode
                 }
         }
     } else if (strcmp(cmd, "melody") == 0) {
-
-        if (arg_count == 0) {
-            println("Usage: melody <freq> <duration> [fg] [bg] | play | delete | clear | show [last] | loop <count> [start] [end] | save | load | random <count> | edit <index> <freq> <duration> [fg] [bg]");
-        }
-        // PLAY COMMAND
-        else if (strcmp(args[0], "play") == 0) {
-            if (melodyQueueSize == 0) {
-                println("Queue's empty, ya muppet. Nothing tae play.");
-            } else {
-                println("Playing melody queue...");
-                
-                int i = 0;
-        
-                // STEP 1: play up to loopStartNote (if loop is enabled and start > 0)
-                if (loopEnabled && loopStartNote > 0) {
-                    for (i = 0; i < loopStartNote; i++) {
-                        set_color(melodyQueue[i].fg, melodyQueue[i].bg);
-                        repaint_screen(melodyQueue[i].fg, melodyQueue[i].bg);
-        
-                        char buf[64];
-                        snprintf(buf, sizeof(buf), "Beep! %d Hz, %d ms. Colors: fg %d, bg %d",
-                                 melodyQueue[i].freq,
-                                 melodyQueue[i].duration,
-                                 melodyQueue[i].fg,
-                                 melodyQueue[i].bg);
-                        println(buf);
-        
-                        beep(melodyQueue[i].freq, melodyQueue[i].duration);
-                    }
-                }
-        
-                // STEP 2: loop between loopStartNote and loopEndNote if loopEnabled
-                if (loopEnabled) {
-                    int currentLoop = 0;
-                    while (loopCount == 0 || currentLoop < loopCount) {
-                        for (int j = loopStartNote; j <= loopEndNote; j++) {
-                            set_color(melodyQueue[j].fg, melodyQueue[j].bg);
-                            repaint_screen(melodyQueue[j].fg, melodyQueue[j].bg);
-        
-                            char buf[64];
-                            snprintf(buf, sizeof(buf), "Beep! %d Hz, %d ms. Colors: fg %d, bg %d",
-                                     melodyQueue[j].freq,
-                                     melodyQueue[j].duration,
-                                     melodyQueue[j].fg,
-                                     melodyQueue[j].bg);
-                            println(buf);
-        
-                            beep(melodyQueue[j].freq, melodyQueue[j].duration);
-                        }
-                        currentLoop++;
-                    }
-        
-                    i = loopEndNote + 1; // STEP 3: continue after the loop ends
-                }
-        
-                // STEP 4: play the rest of the melody
-                for (; i < melodyQueueSize; i++) {
-                    set_color(melodyQueue[i].fg, melodyQueue[i].bg);
-                    repaint_screen(melodyQueue[i].fg, melodyQueue[i].bg);
-        
-                    char buf[64];
-                    snprintf(buf, sizeof(buf), "Beep! %d Hz, %d ms. Colors: fg %d, bg %d",
-                             melodyQueue[i].freq,
-                             melodyQueue[i].duration,
-                             melodyQueue[i].fg,
-                             melodyQueue[i].bg);
-                    println(buf);
-        
-                    beep(melodyQueue[i].freq, melodyQueue[i].duration);
-                }
-        
-                set_color(2, 15);
-                repaint_screen(2, 15);
-                println("Finished playing melody. Yer ears knackered yet?");
-            }
-        }
-
-        // RANDOM COMMAND
-        else if (strcmp(args[0], "random") == 0) {
-            if (arg_count < 2) {
-                println("Usage: melody random <count>. Ye fuckin donut.");
-            } else {
-                int count = atoi(args[1]);
-                if (count <= 0) {
-                    println("Count must be greater than 0, ya muppet.");
-                } else if (melodyQueueSize + count > MELODY_QUEUE_SIZE) {
-                    println("Queue cannae handle that many notes, ya greedy bastard.");
-                } else {
-                    for (int i = 0; i < count; i++) {
-                        int freq = rand(14001) + 400; // 400 to 14400
-                        int duration = rand(4751) + 250; // 250 to 5000
-                        int fg = rand(16); // 0 to 15
-                        int bg = rand(16); // 0 to 15
-
-                        melodyQueue[melodyQueueSize].freq = freq;
-                        melodyQueue[melodyQueueSize].duration = duration;
-                        melodyQueue[melodyQueueSize].fg = fg;
-                        melodyQueue[melodyQueueSize].bg = bg;
-
-                        melodyQueueSize++;
-                    }
-
-                    char buf[64];
-                    snprintf(buf, sizeof(buf), "Added %d random notes tae the queue. Yer playlist's now a mess.", count);
-                    println(buf);
-                }
-            }
-        }
-
-        // DELETE COMMAND
-        else if (strcmp(args[0], "delete") == 0) {
-            if (melodyQueueSize == 0) {
-                println("Queue's already empty, ya tube.");
-            } else {
-                melodyQueueSize--;
-                println("Deleted last note from the queue.");
-            }
-        }
-    
-        // CLEAR COMMAND
-        else if (strcmp(args[0], "clear") == 0) {
-            melodyQueueSize = 0;
-            println("Cleared the entire queue. Wiped cleaner than yer browsing history.");
-        }
-    
-        // SHOW COMMAND
-        else if (strcmp(args[0], "show") == 0) {
-            if (arg_count == 2 && strcmp(args[1], "last") == 0) {
-                if (melodyQueueSize == 0) {
-                    println("Queue's empty. No last note tae show, ya dafty.");
-                } else {
-                    char buf[128]; // make the buffer bigger ya lazy sod
-                    snprintf(buf, sizeof(buf), "Last note: %d Hz, %d ms, fg %d, bg %d",
-                             melodyQueue[melodyQueueSize - 1].freq,
-                             melodyQueue[melodyQueueSize - 1].duration,
-                             melodyQueue[melodyQueueSize - 1].fg,
-                             melodyQueue[melodyQueueSize - 1].bg);
-                    println(buf);
-                }
-            } else {
-                if (melodyQueueSize == 0) {
-                    println("Queue's empty. What the fuck are ye tryin' to look at?");
-                } else {
-                    println("Melody queue:");
-                    for (int i = 0; i < melodyQueueSize; i++) {
-                        char buf[128]; // bigger buffer, cos yer adding text ya numpty
-        
-                        // start with the note info
-                        snprintf(buf, sizeof(buf), "%d: %d Hz, %d ms, fg %d, bg %d",
-                                 i,
-                                 melodyQueue[i].freq,
-                                 melodyQueue[i].duration,
-                                 melodyQueue[i].fg,
-                                 melodyQueue[i].bg);
-        
-                        // add loop start/end markers if this is the one
-                        if (loopEnabled) {
-                            if (i == loopStartNote) {
-                                strncat(buf, " [LOOP START]", sizeof(buf) - strlen(buf) - 1);
-                            }
-                            if (i == loopEndNote) {
-                                strncat(buf, " [LOOP END]", sizeof(buf) - strlen(buf) - 1);
-                            }
-                        }
-        
-                        println(buf);
-                        curs_row++;
-                        update_cursor();
-                    }
-                }
-            }
-        }
-        
-        // LOOP COMMAND
-        else if (strcmp(args[0], "loop") == 0) {
-            if (arg_count < 2) {
-                println("Usage: melody loop <count> [start note] [end note]");
-            } else {
-                loopCount = atoi(args[1]);
-                loopStartNote = 0;
-                loopEndNote = melodyQueueSize - 1;
-        
-                if (arg_count >= 3) loopStartNote = atoi(args[2]);
-                if (arg_count >= 4) loopEndNote = atoi(args[3]);
-        
-                if (melodyQueueSize == 0) {
-                    println("Queue's empty ya bawbag. Nothin tae loop.");
-                    loopEnabled = false;
-                } else if (loopStartNote < 0 || loopStartNote >= melodyQueueSize || loopEndNote < 0 || loopEndNote >= melodyQueueSize) {
-                    println("Start or end note is outta range, ya donkey.");
-                    loopEnabled = false;
-                } else if (loopStartNote > loopEndNote) {
-                    println("Start note's after end note. Did ye mash yer keyboard again?");
-                    loopEnabled = false;
-                } else {
-                    println("Loop points set. Play will loop now. Don't say I didnae warn ye.");
-                    loopEnabled = true;
-                }
-            }
-        }
-    
-        // EDIT COMMAND
-        else if (strcmp(args[0], "edit") == 0) {
-            if (arg_count < 4) {
-                println("Usage: melody edit <index> <freq> <duration> [fg] [bg]");
-            } else {
-                int index = atoi(args[1]);
-                if (index < 0 || index >= melodyQueueSize) {
-                    println("Index out of range, ya absolute melt.");
-                    return;
-                }
-
-                int freq = atoi(args[2]);
-                int duration = atoi(args[3]);
-
-                if (freq <= 0 || duration <= 0) {
-                    println("Invalid freq or duration. This ain't rocket science ya cabbage.");
-                    return;
-                }
-
-                int fg = melodyQueue[index].fg; // use existing values if not provided
-                int bg = melodyQueue[index].bg;
-
-                if (arg_count >= 5) fg = atoi(args[4]); // this is fine, fg is args[4]
-                if (arg_count >= 6) bg = atoi(args[5]); // bg is args[5]
-
-                if (fg < 0 || fg > 15 || bg < 0 || bg > 15) {
-                    println("Colour values must be between 0 and 15, ya speccy tube.");
-                    return;
-                }
-
-                melodyQueue[index].freq = freq;
-                melodyQueue[index].duration = duration;
-                melodyQueue[index].fg = fg;
-                melodyQueue[index].bg = bg;
-
-                char buf[64];
-                snprintf(buf, sizeof(buf), "Edited note #%d: %d Hz, %d ms, fg %d, bg %d",
-                        index, freq, duration, fg, bg);
-                println(buf);
-            }
-        }
-    
-        // ADD NOTE COMMAND
-        else if (arg_count >= 2) {
-            int freq = atoi(args[0]);
-            int duration = atoi(args[1]);
-
-            int fg = 15;
-            int bg = 0;
-
-            if (arg_count >= 3) fg = atoi(args[2]); // was >= 4, should be >= 3!
-            if (arg_count >= 4) bg = atoi(args[3]); // was >= 5, should be >= 4!
-
-            if (freq <= 0 || duration <= 0) {
-                println("Invalid; discarded. Ye tryin' tae crash this thing?");
-            } else if (fg < 0 || fg > 15 || bg < 0 || bg > 15) {
-                println("Colour values must be between 0 and 15, ya blind tosser.");
-            } else if (melodyQueueSize >= MELODY_QUEUE_SIZE) {
-                println("Queue's full, ya greedy bastard.");
-            } else {
-                melodyQueue[melodyQueueSize].freq = freq;
-                melodyQueue[melodyQueueSize].duration = duration;
-                melodyQueue[melodyQueueSize].fg = fg;
-                melodyQueue[melodyQueueSize].bg = bg;
-                melodyQueueSize++;
-                println("Added tae melody queue. It's like yer makin' yer own funeral music.");
-            }
-        }   
-    
-        // INVALID COMMAND
-        else {
-            println("Invalid; discarded. Ye want tae try speakin' English next time?");
-        }
-    } else if (strcmp(cmd, "velocity") == 0) {
-        if (arg_count == 0)
-            println("Coming soon...");
-        else if (arg_count >= 1) {
-             if (strcmp(args[0], "enable") == 0) {
-                velocity_init(g_mb_info);
-                println("If you're seeing this, it didn't work.");
-             } else {
-                println("Velocity is a measure of speed. What's your point?");
-             }
-        }
-    }
-    
-    else if (strcmp(cmd, "poem") == 0) {
+        melody_main();
+    } else if (strcmp(cmd, "poem") == 0) {
         retain_clock = 0;
         // Clear the screen
         clear_screen();
@@ -640,12 +329,13 @@ int macos = 0; // macos mode
             println("clear - Clear the screen (does not clear visual effects).");
             println("color <text color> <background color> - Change text and background colors.");
             println("echo <repetions> <\"text\"> - Echo the text back to the console. /n for new line.");
+            println("program [load|run|clear] - Load, run, or de-load a program from Serial (COM1).");
+            println("simas - Run the SIMAS interpreter.");
             println("help - Display this help message.");
             println("reboot - Reboot the system.");
-            println("program [load|run|clear] - Load, run, or de-load a program from Serial (COM1).");
             println("reset - Reset the screen to default.");
             println("shutdown - Shutdown the system.");
-            curs_row += 8;
+            curs_row += 9;
             update_cursor();
         } else if (strcmp(args[0], "2") == 0){
             println("Available music commands");
@@ -664,8 +354,7 @@ int macos = 0; // macos mode
             println("macos - no need for ths command... this is not MacOS...");
             println("poem - display the Beacon Poem");
             println("test [argument] - Test command with optional argument.");
-            println("velocity - Enable velocity mode. Coming soon...");
-            curs_row += 4;
+            curs_row += 3;
             update_cursor();
         } else {
             println("Usage: help [number]");
@@ -700,7 +389,9 @@ int macos = 0; // macos mode
                 println("RTC date updated. If it's wrong, you're the moron who typed it.");
             }
         }
-    }     else if (strcmp(cmd, "beep") == 0) {
+    } else if (strcmp(cmd, "simas") == 0) {
+        simas_main();
+    } else if (strcmp(cmd, "beep") == 0) {
         if (arg_count != 2) {
             println("Usage: beep <frequency in Hz> <duration in ms>");
         } else {

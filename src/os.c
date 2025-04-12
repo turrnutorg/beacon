@@ -91,6 +91,7 @@ void start() {
     curs_row = 3;
     curs_col = 0;
     g_mb_info = mb_info;
+    input_len = 0;
     update_cursor();
 
     int loop_counter = 0;
