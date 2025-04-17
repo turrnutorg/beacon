@@ -5,7 +5,7 @@ OBJCOPY = objcopy
 CFLAGS = -m32 -march=i386 -ffreestanding -O2 -Wall -Wextra -nostdlib -fno-pic -fno-pie
 LDFLAGS = -T link.ld
 
-SRC = main_example.c
+SRC = main.c dungeon.c
 OBJS = $(SRC:.c=.o)
 
 all: cleanup

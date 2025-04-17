@@ -16,6 +16,7 @@
  #include "time.h"
  #include "csa.h"
  #include "serial.h"
+ #include "dungeon.h"
  #include <stdint.h>
  #include <stdarg.h>
  #include <stdbool.h>
@@ -227,23 +228,28 @@ int macos = 0; // macos mode
          delay_ms(1000);
          shutdown();
  
+    } else if (strcmp(cmd, "dungeon") == 0) {
+        println("Launching the dungeon game...");
+        delay_ms(1000);
+        start_dungeon();
+ 
     } else if (strcmp(cmd, "program") == 0) {
-    if (arg_count == 0) {
-        println("Usage: program [load|run|clear]");
-    } else if (strcmp(args[0], "load") == 0) {
-        command_load(NULL);
-    } else if (strcmp(args[0], "run") == 0) {
-        if (csa_entrypoint == NULL) {
-            println("Error: No program loaded, ya fuckin goblin.");
+        if (arg_count == 0) {
+            println("Usage: program [load|run|clear]");
+        } else if (strcmp(args[0], "load") == 0) {
+            command_load(NULL);
+        } else if (strcmp(args[0], "run") == 0) {
+            if (csa_entrypoint == NULL) {
+                println("Error: No program loaded, ya fuckin goblin.");
+            } else {
+                println("Executing loaded program...");
+                execute_csa();
+            }
+        } else if (strcmp(args[0], "clear") == 0) {
+            csa_clear();
         } else {
-            println("Executing loaded program...");
-            execute_csa();
+            println("Invalid argument. Use 'load' or 'run', ya eejit.");
         }
-    } else if (strcmp(args[0], "clear") == 0) {
-        csa_clear();
-    } else {
-        println("Invalid argument. Use 'load' or 'run', ya eejit.");
-    }
     } else if (strcmp(cmd, "color") == 0) {
         if (arg_count != 2) {
             println("Usage: color <text color> <background color>");
@@ -331,11 +337,12 @@ int macos = 0; // macos mode
             println("echo <repetions> <\"text\"> - Echo the text back to the console. /n for new line.");
             println("program [load|run|clear] - Load, run, or de-load a program from Serial (COM1).");
             println("simas - Run the SIMAS interpreter.");
+            println("dungeon - Run the dungeon game.");
             println("help - Display this help message.");
             println("reboot - Reboot the system.");
             println("reset - Reset the screen to default.");
             println("shutdown - Shutdown the system.");
-            curs_row += 9;
+            curs_row += 10;
             update_cursor();
         } else if (strcmp(args[0], "2") == 0){
             println("Available music commands");

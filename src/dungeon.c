@@ -2,15 +2,21 @@
  * dungeon.c - Ported dungeon game for Beacon with SFX and color effects
  *
  * Just a little tech demo I wrote for Beacon.
- * Now ported to CSA format as a proof of concept.
- * ...likely lagging behind the preincluded version in many ways but eh
  *
  * Written by Xander Gomez (tuvalutortorture)
  * Copyright (c) 2025 Turrnut Open Source Organization
  * Licensed under the GPL v3 License
  */
+
  #include "dungeon.h"
- #include "syscall.h"
+ #include "os.h"
+ #include "console.h"
+ #include "command.h"
+ #include "screen.h"
+ #include "speaker.h"
+ #include "keyboard.h"
+ #include "time.h"
+ #include "string.h"
  #include <stdarg.h>
  #include <stdint.h>
  
@@ -88,20 +94,15 @@
  
  // RTC start time globals for playtime tracking
  uint8_t rtc_start_hour = 0, rtc_start_minute = 0, rtc_start_second = 0;
- 
- /*
-  * global syscall pointer.
-  */
- syscall_table_t* sys;
- 
+
  /*
   * change_color: sets the foreground and background colors and repaints the screen.
   */
  void change_color(uint8_t fg, uint8_t bg) {
      current_fg_color = fg;
      current_bg_color = bg;
-     sys->set_color(fg, bg);
-     sys->repaint_screen(fg, bg);
+     set_color(fg, bg);
+     repaint_screen(fg, bg);
  }
  
  /*
@@ -148,24 +149,24 @@
   * flash_damage: flashes screen red.
   */
  void flash_damage() {
-     sys->set_color(4, 4);
-     sys->repaint_screen(4, 4);
-     sys->beep(300, 200);
-     sys->delay_ms(300);  // reduced delay for quicker feedback
-     sys->set_color(current_fg_color, current_bg_color);
-     sys->repaint_screen(current_fg_color, current_bg_color);
+     set_color(4, 4);
+     repaint_screen(4, 4);
+     beep(300, 200);
+     delay_ms(300);  // reduced delay for quicker feedback
+     set_color(current_fg_color, current_bg_color);
+     repaint_screen(current_fg_color, current_bg_color);
  }
  
  /*
   * flash_heal: flashes screen green.
   */
  void flash_heal() {
-     sys->set_color(2, 2);
-     sys->repaint_screen(2, 2);
-     sys->beep(1000, 100);
-     sys->delay_ms(300);
-     sys->set_color(current_fg_color, current_bg_color);
-     sys->repaint_screen(current_fg_color, current_bg_color);
+     set_color(2, 2);
+     repaint_screen(2, 2);
+     beep(1000, 100);
+     delay_ms(300);
+     set_color(current_fg_color, current_bg_color);
+     repaint_screen(current_fg_color, current_bg_color);
  }
  
  /*
@@ -174,7 +175,7 @@
  void updateText(const char *format, ...) {
      va_list args;
      va_start(args, format);
-     sys->vsnprintf(currentText, sizeof(currentText), format, args);
+     vsnprintf(currentText, sizeof(currentText), format, args);
      va_end(args);
      textDisplayed = 0;
  }
@@ -185,22 +186,22 @@
   */
  void displayText() {
      for (int i = 15; i < MAX_HEIGHT; i++) {
-         sys->gotoxy(0, i);
+         gotoxy(0, i);
          for (int j = 0; j < MAX_WIDTH; j++) {
-             sys->print(" ");
+             print(" ");
          }
      }
-     sys->gotoxy(0, 15);
+     gotoxy(0, 15);
      static char lastDisplayedText[1024] = "";
      int yOffset = 15;
      int lineStart = 0;
-     int len = sys->strlen(currentText);
+     int len = strlen(currentText);
      char buffer[MAX_WIDTH + 1];
  
-     if (textDisplayed && sys->strcmp(lastDisplayedText, currentText) == 0) {
+     if (textDisplayed && strcmp(lastDisplayedText, currentText) == 0) {
          int xOffset = (MAX_WIDTH - len) / 2;
-         sys->gotoxy(xOffset, 15);
-         sys->print(currentText);
+         gotoxy(xOffset, 15);
+         print(currentText);
          return;
      }
  
@@ -214,21 +215,21 @@
              buffer[lineLength] = '\0';
  
              int xOffset = (MAX_WIDTH - lineLength) / 2;
-             sys->gotoxy(xOffset, yOffset++);
+             gotoxy(xOffset, yOffset++);
              // reduced delay per character for better responsiveness
              for (int j = 0; j < lineLength; j++) {
                  char ch[2] = { buffer[j], '\0' };
-                 sys->print(ch);
-                 sys->delay_ms(1500);
+                 print(ch);
+                 delay_ms(1500);
              }
              lineStart = i + 1;
              while (currentText[lineStart] == ' ' && currentText[lineStart] != '\0')
                  lineStart++;
          }
      }
-     sys->strcpy(lastDisplayedText, currentText);
+     strcpy(lastDisplayedText, currentText);
      textDisplayed = 1;
-     sys->getch();
+     getch();
  }
  
  /*
@@ -237,7 +238,7 @@
  void showText(const char *format, ...) {
      va_list args;
      va_start(args, format);
-     sys->vsnprintf(currentText, sizeof(currentText), format, args);
+     vsnprintf(currentText, sizeof(currentText), format, args);
      va_end(args);
      textDisplayed = 0;
      displayText();
@@ -251,41 +252,41 @@
      int healthBars = playerHealth / 10;
      int staminaBars = playerStamina / 10;
  
-     sys->gotoxy(0, 0);
-     sys->snprintf(statusBuffer, sizeof(statusBuffer), "Health: [");
-     sys->print(statusBuffer);
+     gotoxy(0, 0);
+     snprintf(statusBuffer, sizeof(statusBuffer), "Health: [");
+     print(statusBuffer);
      for (int i = 0; i < (maxHealth + permanentHealthBonus) / 10; i++) {
-         sys->print(i < healthBars ? "|" : " ");
+         print(i < healthBars ? "|" : " ");
      }
-     sys->print("]");
+     print("]");
  
-     sys->gotoxy(0, 1);
-     sys->snprintf(statusBuffer, sizeof(statusBuffer), "Stamina: [");
-     sys->print(statusBuffer);
+     gotoxy(0, 1);
+     snprintf(statusBuffer, sizeof(statusBuffer), "Stamina: [");
+     print(statusBuffer);
      for (int i = 0; i < (maxStamina + permanentStaminaBonus) / 10; i++) {
-         sys->print(i < staminaBars ? "|" : " ");
+         print(i < staminaBars ? "|" : " ");
      }
-     sys->print("]");
+     print("]");
  
-     sys->gotoxy(0, 2);
-     sys->snprintf(statusBuffer, sizeof(statusBuffer), "Gold: %d", gold);
-     sys->print(statusBuffer);
+     gotoxy(0, 2);
+     snprintf(statusBuffer, sizeof(statusBuffer), "Gold: %d", gold);
+     print(statusBuffer);
  
-     sys->gotoxy(0, 3);
-     sys->snprintf(statusBuffer, sizeof(statusBuffer), "Steps: %d", steps);
-     sys->print(statusBuffer);
+     gotoxy(0, 3);
+     snprintf(statusBuffer, sizeof(statusBuffer), "Steps: %d", steps);
+     print(statusBuffer);
  
-     sys->gotoxy(0, 4);
-     sys->snprintf(statusBuffer, sizeof(statusBuffer), "Enemies defeated: %d", enemiesDefeated);
-     sys->print(statusBuffer);
+     gotoxy(0, 4);
+     snprintf(statusBuffer, sizeof(statusBuffer), "Enemies defeated: %d", enemiesDefeated);
+     print(statusBuffer);
  
-     sys->gotoxy(0, 5);
-     sys->snprintf(statusBuffer, sizeof(statusBuffer), "Floor: %d", floor);
-     sys->print(statusBuffer);
+     gotoxy(0, 5);
+     snprintf(statusBuffer, sizeof(statusBuffer), "Floor: %d", floor);
+     print(statusBuffer);
  
-     sys->gotoxy(0, 6);
-     sys->snprintf(statusBuffer, sizeof(statusBuffer), "Position: %s", (battlePosition == 0 ? "Front" : "Back"));
-     sys->print(statusBuffer);
+     gotoxy(0, 6);
+     snprintf(statusBuffer, sizeof(statusBuffer), "Position: %s", (battlePosition == 0 ? "Front" : "Back"));
+     print(statusBuffer);
  }
  
  /*
@@ -293,29 +294,29 @@
   */
  void displayInventory() {
      char invBuffer[128];
-     sys->gotoxy(60, 0);
-     sys->print("Inventory:");
-     sys->gotoxy(60, 1);
-     sys->snprintf(invBuffer, sizeof(invBuffer), "Health Potions: %d", healthPotions);
-     sys->print(invBuffer);
-     sys->gotoxy(60, 2);
-     sys->snprintf(invBuffer, sizeof(invBuffer), "Stamina Potions: %d", staminaPotions);
-     sys->print(invBuffer);
-     sys->gotoxy(60, 3);
-     sys->snprintf(invBuffer, sizeof(invBuffer), "Elixirs: %d", elixirs);
-     sys->print(invBuffer);
-     sys->gotoxy(60, 4);
-     sys->snprintf(invBuffer, sizeof(invBuffer), "Arrows: %d", arrows);
-     sys->print(invBuffer);
-     sys->gotoxy(60, 5);
-     sys->snprintf(invBuffer, sizeof(invBuffer), "Armor Plates: %d", armorCount);
-     sys->print(invBuffer);
-     sys->gotoxy(60, 6);
-     sys->snprintf(invBuffer, sizeof(invBuffer), "Sharpening Tools: %d", sharpCount);
-     sys->print(invBuffer);
-     sys->gotoxy(60, 7);
-     sys->snprintf(invBuffer, sizeof(invBuffer), "Shield: %s", (shieldCount > 0 ? "Equipped" : "None"));
-     sys->print(invBuffer);
+     gotoxy(60, 0);
+     print("Inventory:");
+     gotoxy(60, 1);
+     snprintf(invBuffer, sizeof(invBuffer), "Health Potions: %d", healthPotions);
+     print(invBuffer);
+     gotoxy(60, 2);
+     snprintf(invBuffer, sizeof(invBuffer), "Stamina Potions: %d", staminaPotions);
+     print(invBuffer);
+     gotoxy(60, 3);
+     snprintf(invBuffer, sizeof(invBuffer), "Elixirs: %d", elixirs);
+     print(invBuffer);
+     gotoxy(60, 4);
+     snprintf(invBuffer, sizeof(invBuffer), "Arrows: %d", arrows);
+     print(invBuffer);
+     gotoxy(60, 5);
+     snprintf(invBuffer, sizeof(invBuffer), "Armor Plates: %d", armorCount);
+     print(invBuffer);
+     gotoxy(60, 6);
+     snprintf(invBuffer, sizeof(invBuffer), "Sharpening Tools: %d", sharpCount);
+     print(invBuffer);
+     gotoxy(60, 7);
+     snprintf(invBuffer, sizeof(invBuffer), "Shield: %s", (shieldCount > 0 ? "Equipped" : "None"));
+     print(invBuffer);
  }
  
  /*
@@ -325,26 +326,26 @@
      int selection = 0;
      int key;
      int menuStartLine = 20;
-     sys->clear_screen();
+     clear_screen();
      while (1) {
          displayStatus();
          displayInventory();
          displayText();
-         sys->gotoxy(0, menuStartLine - 1);
+         gotoxy(0, menuStartLine - 1);
          for (int i = 0; i < MAX_WIDTH; i++)
-             sys->print("-");
+             print("-");
          for (int i = 0; i < numOptions; i++) {
              int x = 5 + (i % 2) * 40;
              int y = menuStartLine + (i / 2);
-             sys->gotoxy(x, y);
+             gotoxy(x, y);
              if (i == selection)
-                 sys->print("-> ");
+                 print("-> ");
              else
-                 sys->print("   ");
-             sys->print(options[i]);
-             sys->update_cursor();
+                 print("   ");
+             print(options[i]);
+             update_cursor();
          }
-         key = sys->getch();
+         key = getch();
          if (key == UP_ARROW)
              selection = (selection - 2 + numOptions) % numOptions;
          if (key == DOWN_ARROW)
@@ -354,7 +355,7 @@
          if (key == RIGHT_ARROW)
              selection = (selection + 1) % numOptions;
          if (key == '\n') {
-             sys->clear_screen();
+             clear_screen();
              return selection;
          }
      }
@@ -370,7 +371,7 @@
          // consume one use from the first available tool
          sharpTools[0].uses--;
          if (sharpTools[0].uses <= 0) {
-             sys->print("Yer sharpening tool dulls and breaks!\n");
+             print("Yer sharpening tool dulls and breaks!\n");
              // shift remaining tools up
              for (int i = 0; i < sharpCount - 1; i++) {
                  sharpTools[i] = sharpTools[i+1];
@@ -392,7 +393,7 @@
          activeArmorBonus += 1;
          armorEquip[0].uses--;
          if (armorEquip[0].uses <= 0) {
-             sys->print("Yer armor plate crumbles tae dust!\n");
+             print("Yer armor plate crumbles tae dust!\n");
              for (int i = 0; i < armorCount - 1; i++) {
                  armorEquip[i] = armorEquip[i+1];
              }
@@ -417,12 +418,12 @@
      if (selection == 0) {
          if (healthPotions > 0) {
              healthPotions--;
-             heal = sys->rand(30) + 20;
+             heal = rand(30) + 20;
              playerHealth += heal;
              if (playerHealth > maxHealth + permanentHealthBonus)
                  playerHealth = maxHealth + permanentHealthBonus;
              flash_heal();
-             sys->snprintf(msg, sizeof(msg), "Used health potion! Healed %d health.", heal);
+             snprintf(msg, sizeof(msg), "Used health potion! Healed %d health.", heal);
              updateText(msg);
          } else {
              updateText("No health potions left!");
@@ -430,12 +431,12 @@
      } else if (selection == 1) {
          if (staminaPotions > 0) {
              staminaPotions--;
-             stamina = sys->rand(20) + 15;
+             stamina = rand(20) + 15;
              playerStamina += stamina;
              if (playerStamina > maxStamina + permanentStaminaBonus)
                  playerStamina = maxStamina + permanentStaminaBonus;
              flash_heal();
-             sys->snprintf(msg, sizeof(msg), "Used stamina potion! Restored %d stamina.", stamina);
+             snprintf(msg, sizeof(msg), "Used stamina potion! Restored %d stamina.", stamina);
              updateText(msg);
          } else {
              updateText("No stamina potions left!");
@@ -487,16 +488,16 @@
     int damage;
     if (playerStamina < 10) {
         escapeFailed = 1;
-        sys->snprintf(msg, sizeof(msg), "Not enough stamina to run away!");
-    } else if (sys->rand(10) < 2) {
+        snprintf(msg, sizeof(msg), "Not enough stamina to run away!");
+    } else if (rand(10) < 2) {
         escapeFailed = 1;
-        damage = sys->rand(11) + 5;
+        damage = rand(11) + 5;
         playerHealth -= damage;
         flash_damage();
-        sys->snprintf(msg, sizeof(msg), "Failed to escape! Took %d damage.", damage);
+        snprintf(msg, sizeof(msg), "Failed to escape! Took %d damage.", damage);
     } else {
         escapeFailed = 0;
-        sys->snprintf(msg, sizeof(msg), "Successfully escaped! Lost 10 stamina. Lost %d gold.", gold / 5);
+        snprintf(msg, sizeof(msg), "Successfully escaped! Lost 10 stamina. Lost %d gold.", gold / 5);
         playerStamina -= 10;
         if (playerStamina < 0)
             playerStamina = 0;
@@ -507,9 +508,9 @@
 }
  
  void endGame() {
-    sys->clear_screen();
+    clear_screen();
     uint8_t rtc_end_hour, rtc_end_minute, rtc_end_second, rtc_day, rtc_month, rtc_year;
-    sys->read_rtc_datetime(&rtc_end_hour, &rtc_end_minute, &rtc_end_second, &rtc_day, &rtc_month, &rtc_year);
+    read_rtc_datetime(&rtc_end_hour, &rtc_end_minute, &rtc_end_second, &rtc_day, &rtc_month, &rtc_year);
     int startTotal = rtc_start_hour * 3600 + rtc_start_minute * 60 + rtc_start_second;
     int endTotal = rtc_end_hour * 3600 + rtc_end_minute * 60 + rtc_end_second;
     int playTime = endTotal - startTotal;
@@ -517,13 +518,13 @@
     int minutes = (playTime % 3600) / 60;
     int seconds = playTime % 60;
 
-    sys->print("\nGame Over! Thanks for playing.\n\n");
+    print("\nGame Over! Thanks for playing.\n\n");
     char timeBuffer[64];
-    sys->snprintf(timeBuffer, sizeof(timeBuffer), "Time played: %d:%d:%d\n", hours, minutes, seconds);
-    sys->print(timeBuffer);
-    sys->print("\nMade by Xander Gomez (tuvalutortorture)\n\nPress any key to exit...\n");
-    sys->getch();
-    sys->reset();
+    snprintf(timeBuffer, sizeof(timeBuffer), "Time played: %d:%d:%d\n", hours, minutes, seconds);
+    print(timeBuffer);
+    print("\nMade by Xander Gomez (tuvalutortorture)\n\nPress any key to exit...\n");
+    getch();
+    reset();
 }
 
 
@@ -573,7 +574,7 @@ void attackMenu(int *monsterHealth, int *retaliate) {
             arrowFiredFromBackRow = 0;
         }
 
-        damage = sys->rand(range[selection]) + baseDamage[selection];
+        damage = rand(range[selection]) + baseDamage[selection];
 
         // apply manual sharpening bonus if activated
         if (activeSharpBonus > 0) {
@@ -591,8 +592,8 @@ void attackMenu(int *monsterHealth, int *retaliate) {
             arrowFiredFromBackRow = 0;
 
         // Handle miss/crit chance
-        int missRoll = sys->rand(100);
-        int critRoll = sys->rand(100);
+        int missRoll = rand(100);
+        int critRoll = rand(100);
 
         int missChance = 10; // base miss chance %
         int critChance = 10; // base crit chance %
@@ -614,9 +615,9 @@ void attackMenu(int *monsterHealth, int *retaliate) {
         } else {
             if (critRoll < critChance) {
                 damage *= 2;
-                sys->snprintf(msg, sizeof(msg), "Critical hit! Ye dealt %d damage!", damage);
+                snprintf(msg, sizeof(msg), "Critical hit! Ye dealt %d damage!", damage);
             } else {
-                sys->snprintf(msg, sizeof(msg), "Ye dealt %d damage!", damage);
+                snprintf(msg, sizeof(msg), "Ye dealt %d damage!", damage);
             }
             *monsterHealth -= damage;
             updateText(msg);
@@ -640,31 +641,31 @@ void attackMenu(int *monsterHealth, int *retaliate) {
     if (isBoss) {
         char *bosses[] = {"Ironclad King", "Ravager of Souls", "Stormbringer", "The Herald of Despair", "Voidcaller"};
         int bossCount = 5;
-        baseHealth = sys->rand(120) + 150;
+        baseHealth = rand(120) + 150;
         monsterHealth = baseHealth;
-        sys->set_color(0, 4);
-        sys->repaint_screen(0, 4);
+        set_color(0, 4);
+        repaint_screen(0, 4);
         current_fg_color = 0;
         current_bg_color = 4;
-        sys->snprintf(msg, sizeof(msg), "Ye encounter the %s!", bosses[sys->rand(bossCount) % bossCount]);
+        snprintf(msg, sizeof(msg), "Ye encounter the %s!", bosses[rand(bossCount) % bossCount]);
         showText(msg);
     } else {
         const char *monsterName;
-        if (sys->rand(10) < 2) {
+        if (rand(10) < 2) {
             isMimic = 1;
             monsterName = "Mimic";
-            baseHealth = sys->rand(20) + 100 + (floor * 10);
+            baseHealth = rand(20) + 100 + (floor * 10);
             change_color(14, 0);
         } else {
             const char *normalMonsters[] = {"Goblin", "Troll", "Skeleton", "Wizard", "Zombie-sized Chicken", "Bandit", "Rabid Dog"};
             int normalCount = 7;
-            int idx = sys->rand(normalCount) % normalCount;
+            int idx = rand(normalCount) % normalCount;
             monsterName = normalMonsters[idx];
-            baseHealth = sys->rand(60) + 30 + (floor * 5);
+            baseHealth = rand(60) + 30 + (floor * 5);
             change_color(15, 0);
         }
         monsterHealth = baseHealth;
-        sys->snprintf(msg, sizeof(msg), "A wild %s appeared!", monsterName);
+        snprintf(msg, sizeof(msg), "A wild %s appeared!", monsterName);
         showText(msg);
     }
 
@@ -707,7 +708,7 @@ void attackMenu(int *monsterHealth, int *retaliate) {
                 break;
 
             case 4:
-                sys->snprintf(msg, sizeof(msg), "Enemy has %d / %d health.", monsterHealth, baseHealth);
+                snprintf(msg, sizeof(msg), "Enemy has %d / %d health.", monsterHealth, baseHealth);
                 showText(msg);
                 retaliate = 0;
                 break;
@@ -719,13 +720,13 @@ void attackMenu(int *monsterHealth, int *retaliate) {
         }
 
         if (monsterHealth <= 0) {
-            int loot = sys->rand(20) + 10;
+            int loot = rand(20) + 10;
             if (isMimic) {
                 loot *= 2;
                 healthPotions++;
-                sys->snprintf(msg, sizeof(msg), "Ye defeated the mimic! Gained %d gold and a health potion.", loot);
+                snprintf(msg, sizeof(msg), "Ye defeated the mimic! Gained %d gold and a health potion.", loot);
             } else if (isBoss) {
-                sys->snprintf(msg, sizeof(msg), "Congrats! Ye slayed the boss! Yer attributes increase!");
+                snprintf(msg, sizeof(msg), "Congrats! Ye slayed the boss! Yer attributes increase!");
                 loot *= 3;
                 healthPotions += 1;
                 floor++;
@@ -736,7 +737,7 @@ void attackMenu(int *monsterHealth, int *retaliate) {
                 playerHealth = maxHealth + permanentHealthBonus;
                 playerStamina = maxStamina + permanentStaminaBonus;
             } else {
-                sys->snprintf(msg, sizeof(msg), "Ye defeated the monster! Gained %d gold.", loot);
+                snprintf(msg, sizeof(msg), "Ye defeated the monster! Gained %d gold.", loot);
             }
             gold += loot;
             enemiesDefeated++;
@@ -747,39 +748,39 @@ void attackMenu(int *monsterHealth, int *retaliate) {
         }
 
         if (retaliate && monsterHealth > 0) {
-            int baseDmg = sys->rand(isBoss ? 15 : 8) + (isBoss ? 10 : 3);
+            int baseDmg = rand(isBoss ? 15 : 8) + (isBoss ? 10 : 3);
             float dmg = baseDmg;
             crit = 0;
 
             if (arrowFiredFromBackRow) {
                 arrowFiredFromBackRow = 0;
                 dmg = 0;
-                sys->snprintf(msg, sizeof(msg), "The monster tried to attack, but couldn't reach ye!");
-            } else if (sys->rand(10) == 0) {
+                snprintf(msg, sizeof(msg), "The monster tried to attack, but couldn't reach ye!");
+            } else if (rand(10) == 0) {
                 dmg *= 2;
                 crit = 1;
-                sys->snprintf(msg, sizeof(msg), "The monster scored a critical hit and dealt %d damage!", (int)dmg);
-            } else if (sys->rand(10) == 0) {
+                snprintf(msg, sizeof(msg), "The monster scored a critical hit and dealt %d damage!", (int)dmg);
+            } else if (rand(10) == 0) {
                 dmg = 0;
-                sys->snprintf(msg, sizeof(msg), "The monster completely missed!");
+                snprintf(msg, sizeof(msg), "The monster completely missed!");
             } else if (defended == 1) {
                 if (!crit && shieldCount > 0) {
                     shields[0].uses--;
                     if (shields[0].uses <= 0) {
-                        sys->print("Yer shield snaps like a twig in a hurricane!\n");
+                        print("Yer shield snaps like a twig in a hurricane!\n");
                         shieldCount = 0;
                     }
                     dmg = 0;
-                    sys->snprintf(msg, sizeof(msg), "The monster attacked, but yer shield blocked it all!");
+                    snprintf(msg, sizeof(msg), "The monster attacked, but yer shield blocked it all!");
                     playerStamina += 10;
                     if (playerStamina > maxStamina + permanentStaminaBonus)
                         playerStamina = maxStamina + permanentStaminaBonus;
                 } else {
                     dmg /= 2;
-                    sys->snprintf(msg, sizeof(msg), "The monster attacks, but ye block some of it! Ye take %d damage.", (int)dmg);
+                    snprintf(msg, sizeof(msg), "The monster attacks, but ye block some of it! Ye take %d damage.", (int)dmg);
                 }
             } else {
-                sys->snprintf(msg, sizeof(msg), "The monster retaliates and deals %d damage!", (int)dmg);
+                snprintf(msg, sizeof(msg), "The monster retaliates and deals %d damage!", (int)dmg);
             }
 
             if (battlePosition == 1)
@@ -789,7 +790,7 @@ void attackMenu(int *monsterHealth, int *retaliate) {
                 dmg -= activeArmorBonus;
                 if (dmg < 0)
                     dmg = 0;
-                sys->snprintf(msg, sizeof(msg), "Yer extra armor reduces the damage by %d!", activeArmorBonus);
+                snprintf(msg, sizeof(msg), "Yer extra armor reduces the damage by %d!", activeArmorBonus);
             }
 
             playerHealth -= (int)dmg;
@@ -815,10 +816,10 @@ void attackMenu(int *monsterHealth, int *retaliate) {
  void encounterShop() {
      change_color(15, 1);
      char *shopOptions[] = {"Buy Items", "Rest", "Buy Ticket", "Leave"};
-     int healthPotionCost = sys->rand(30) + 40;
-     int staminaPotionCost = sys->rand(10) + 25;
-     int elixirCost = sys->rand(50) + 180;
-     int arrowCost = sys->rand(20) + 25;
+     int healthPotionCost = rand(30) + 40;
+     int staminaPotionCost = rand(10) + 25;
+     int elixirCost = rand(50) + 180;
+     int arrowCost = rand(20) + 25;
      int selection;
      int purchaseSelection;
      int shopRestUsed = 0;
@@ -831,10 +832,10 @@ void attackMenu(int *monsterHealth, int *retaliate) {
              char *purchaseOptions[] = {"Buy Health Potion", "Buy Stamina Potion", "Buy Elixir", "Buy Arrows", "Buy Armor", "Buy Sharpening Tool", "Buy Shield", "Cancel"};
              showText("What will ye buy?");
              // Calculate variable prices for new equipment:
-             int armorCost = 50 + (sys->rand(11) - 5);       // 45-55g
-             int sharpCost = 50 + (sys->rand(11) - 5);         // 45-55g
-             int shieldCost = 50 + (sys->rand(11) - 5);        // 45-55g
-             sys->snprintf(msg, sizeof(msg),
+             int armorCost = 50 + (rand(11) - 5);       // 45-55g
+             int sharpCost = 50 + (rand(11) - 5);         // 45-55g
+             int shieldCost = 50 + (rand(11) - 5);        // 45-55g
+             snprintf(msg, sizeof(msg),
                  "Health pot: %dg, Stamina pot: %dg, Elixir: %dg, Arrows: %dg, Armor: %dg, Sharpening: %dg, Shield: %dg.",
                  healthPotionCost, staminaPotionCost, elixirCost, arrowCost, armorCost, sharpCost, shieldCost);
              updateText(msg);
@@ -1009,7 +1010,7 @@ void exploreDungeon() {
             encounterEnemy(1);
         }
 
-        if (sys->rand(20) == 0) {
+        if (rand(20) == 0) {
             encounterShrine();
         }
 
@@ -1038,7 +1039,7 @@ void exploreDungeon() {
                 playerStamina = maxStamina + permanentStaminaBonus;
             updateText("Ye rested, regaining 10 stamina and 5 health.");
         } else {
-            switch (sys->rand(4)) {
+            switch (rand(4)) {
                 case 0:
                     encounterEnemy(0);
                     break;
@@ -1055,7 +1056,7 @@ void exploreDungeon() {
         }
         displayText();
     }
-    sys->reset();
+    reset();
 }
 
 
@@ -1082,11 +1083,11 @@ void startingItem() {
   * start_dungeon: sets up the game and starts the dungeon exploration loop.
   */
  int start_dungeon() {
-     sys->srand(sys->extra_rand());
-     sys->disable_cursor();
-     sys->clear_screen();
+     srand(extra_rand());
+     disable_cursor();
+     clear_screen();
      uint8_t dummyDay, dummyMonth, dummyYear;
-     sys->read_rtc_datetime(&rtc_start_hour, &rtc_start_minute, &rtc_start_second, &dummyDay, &dummyMonth, &dummyYear);
+     read_rtc_datetime(&rtc_start_hour, &rtc_start_minute, &rtc_start_second, &dummyDay, &dummyMonth, &dummyYear);
      if (is_playing == 0) {
          dungeon_reset();
          showText("Welcome to the Dungeon...");
