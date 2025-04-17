@@ -17,7 +17,6 @@ void command_load(char* args);  // registers the CSA loader
 void csa_feedthru(char byte);   // internal feedthru handler
 void csa_tick(void);         // internal tick handler for csa loading
 void execute_csa(void);     // executes the loaded CSA binary
-void csa_clear(void);    // clears the CSA buffer and resets state
 
 extern void* csa_entrypoint;    // holds entry address after load
 
@@ -31,7 +30,7 @@ typedef struct syscall_table {
     void (*clear_screen)(void);
     void (*repaint_screen)(uint8_t fg, uint8_t bg);
     void (*set_color)(uint8_t fg, uint8_t bg);
-    void (*delay_ms)(int ms);
+    void (*delay_ms)(uint32_t ms);
     void (*disable_cursor)(void);
     void (*update_cursor)(void);
     int  (*getch)(void);
@@ -93,7 +92,6 @@ typedef struct syscall_table {
     void (*println)(const char*);
     void (*newline)(void);
     void (*move_cursor_left)(void);
-    void (*move_cursor_back)(void);
     void (*enable_cursor)(uint8_t, uint8_t);
     void (*enable_bright_bg)(void);
 } syscall_table_t;

@@ -9,15 +9,8 @@
 #include "console.h"
 #include "screen.h"
 #include "port.h"
+#include "time.h"
 #include "serial.h"
-
-#define CMOS_ADDRESS 0x70
-#define CMOS_DATA 0x71
-
-uint8_t read_cmos(uint8_t reg) {
-    outb(CMOS_ADDRESS, reg);
-    return inb(CMOS_DATA);
-}
 
 // Define col and row in this file
 size_t col = 0;
@@ -116,44 +109,6 @@ void move_cursor_left()
     }
 }
 
-void move_cursor_back() {
-    curs_col = 0;
-    update_cursor();
-}
-
-void int_to_str(int value, char* str, int min_digits) {
-    char buffer[16];
-    int i = 0;
-    int is_negative = 0;
-
-    if (value < 0) {
-        is_negative = 1;
-        value = -value;
-    }
-
-    do {
-        buffer[i++] = '0' + (value % 10);
-        value /= 10;
-    } while (value);
-
-    // add leading zeroes
-    while (i < min_digits) {
-        buffer[i++] = '0';
-    }
-
-    if (is_negative) {
-        buffer[i++] = '-';
-    }
-
-    // reverse it into str
-    int j = 0;
-    while (i > 0) {
-        str[j++] = buffer[--i];
-    }
-
-    str[j] = '\0';
-}
-
 void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
     uint8_t color = (bg_color << 4) | fg_color;
 
@@ -171,12 +126,12 @@ void srand(unsigned int seed) {
 }
 
 int extra_rand() {
-    uint8_t sec = read_cmos(0x00);
-    uint8_t min = read_cmos(0x02);
-    uint8_t hour = read_cmos(0x04);
-    uint8_t day = read_cmos(0x07);
-    uint8_t mon = read_cmos(0x08);
-    uint8_t year = read_cmos(0x09);
+    uint8_t sec = cmos_read(0x00);
+    uint8_t min = cmos_read(0x02);
+    uint8_t hour = cmos_read(0x04);
+    uint8_t day = cmos_read(0x07);
+    uint8_t mon = cmos_read(0x08);
+    uint8_t year = cmos_read(0x09);
 
     // mix it all up like a methhead makin potions
     uint32_t seed = sec + (min << 2) + (hour << 4) + (day << 6) + (mon << 8) + (year << 10);

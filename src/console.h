@@ -14,7 +14,6 @@
 #include <stddef.h>
 #include <stdarg.h>
 
-
 extern size_t col;  // Declare external variables
 extern size_t row;
 
@@ -46,9 +45,6 @@ void println(const char *str);
 void set_color(uint8_t fg, uint8_t bg);
 
 void move_cursor_left();
-void move_cursor_back();
-
-void int_to_string(int number, char *str);
 
 unsigned int rand(unsigned int max);
 void srand(unsigned int seed);

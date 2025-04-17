@@ -88,19 +88,7 @@
          return c + 32;
      return c;
  }
- 
- int stricmp(const char *s1, const char *s2) {
-     while (*s1 && *s2) {
-         char c1 = to_lower_char(*s1);
-         char c2 = to_lower_char(*s2);
-         if (c1 != c2)
-             return c1 - c2;
-         s1++;
-         s2++;
-     }
-     return to_lower_char(*s1) - to_lower_char(*s2);
- }
- 
+
  void trim(char *str) {
      // trim leading spaces
      int start = 0;
@@ -743,7 +731,11 @@
  
  char script_storage[MAX_SCRIPT_LENGTH];
  
- void interactive_mode() {
+ void simas_main() {
+     gotoxy(0,0);
+     disable_cursor();
+     clear_screen();
+     print("SIMAS for Beacon; version effective 2.0\n");
      int script_index = 0;
      script_storage[0] = '\0';
      const char *prompt = "simas> ";
@@ -819,17 +811,5 @@
          }
      }
      reset();
- }
- 
- // -------------------- main entry --------------------
- 
- int simas_main() {
-     gotoxy(0,0);
-     disable_cursor();
-     clear_screen();
-     print("SIMAS for Beacon; version effective 2.0\n");
- 
-     interactive_mode();
-     return 0;
  }
  

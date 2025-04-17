@@ -12,6 +12,8 @@
 #include <stdint.h>
 #include <stddef.h> // for size_t
 
+void pit_init_for_polling();
+void delay_ms(uint32_t ms);
 void display_datetime();
 void read_rtc_datetime(uint8_t* hour, uint8_t* minute, uint8_t* second,
     uint8_t* day, uint8_t* month, uint8_t* year);

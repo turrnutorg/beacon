@@ -27,11 +27,6 @@
  
  volatile uint8_t key_states[128] = {0}; // tracks if a key is currently pressed
  
- #define COMMAND_HISTORY_SIZE 5
- extern char command_history[COMMAND_HISTORY_SIZE][INPUT_BUFFER_SIZE];
- extern int command_history_index;
- extern int current_history_index;
- 
  // ----------------------------------------------------------------
  // Add a scancode to the buffer (optional, since asm does it)
  // ----------------------------------------------------------------
@@ -195,54 +190,10 @@
                  update_cursor();
              }
      }
- 
-     // ARROW KEYS
-     else if (ascii == UP_ARROW) {
-         col = 0;
-         if (current_history_index < 0) {
-             current_history_index = command_history_index - 1;
-         } else if (current_history_index > 0) {
-             current_history_index--;
-         }
- 
-         if (current_history_index >= 0) {
-             strncpy(input_buffer, command_history[current_history_index], INPUT_BUFFER_SIZE);
-             input_len = strlen(input_buffer);
-         } else {
-             input_buffer[0] = '\0';
-             input_len = 0;
-         }
- 
-         for (size_t i = 0; i < NUM_COLS; i++) {
-             vga_buffer[curs_row * NUM_COLS + i] = (struct Char){' ', default_color};
-         }
- 
-         move_cursor_back();
-         print(input_buffer);
-         curs_col = input_len;
-         update_cursor();
-     }
- 
-     else if (ascii == DOWN_ARROW) {
-         col = 0;
-         if (current_history_index < command_history_index - 1) {
-             current_history_index++;
-             strncpy(input_buffer, command_history[current_history_index], INPUT_BUFFER_SIZE);
-             input_len = strlen(input_buffer);
-         } else {
-             current_history_index = -1;
-             input_buffer[0] = '\0';
-             input_len = 0;
-         }
- 
-         for (size_t i = 0; i < NUM_COLS; i++) {
-             vga_buffer[curs_row * NUM_COLS + i] = (struct Char){' ', default_color};
-         }
- 
-         move_cursor_back();
-         print(input_buffer);
-         curs_col = input_len;
-         update_cursor();
+
+     else if (ascii == UP_ARROW || ascii == DOWN_ARROW) {
+         // UP and DOWN arrows are ignored in this context
+         return;
      }
  
      else if (ascii == LEFT_ARROW) {
@@ -263,11 +214,6 @@
      else if (ascii == '\n') {
          input_buffer[input_len] = '\0';
  
-         if (input_len > 0) {
-             strncpy(command_history[command_history_index], input_buffer, INPUT_BUFFER_SIZE);
-             command_history_index = (command_history_index + 1) % COMMAND_HISTORY_SIZE;
-         }
- 
          println("");
          process_command(input_buffer);
  
@@ -285,25 +231,29 @@
  
      // NORMAL CHARACTERS
      else {
-         if (input_len < INPUT_BUFFER_SIZE - 1) {
-             input_buffer[input_len++] = ascii;
-         }
- 
-         vga_buffer[curs_row * NUM_COLS + curs_col] = (struct Char){ascii, default_color};
-         curs_col++;
- 
-         if (curs_col >= NUM_COLS) {
-             curs_col = 0;
-             curs_row++;
-         }
- 
-         if (curs_row >= NUM_ROWS) {
-             scroll_screen();
-             curs_row = NUM_ROWS - 1;
-         }
- 
-         update_cursor();
-     }
+        if (input_len < INPUT_BUFFER_SIZE - 1) {
+            // shift everything to the right from curs_col
+            for (size_t i = input_len; i > curs_col; i--) {
+                input_buffer[i] = input_buffer[i - 1];
+            }
+    
+            // insert the new char
+            input_buffer[curs_col] = ascii;
+            input_len++;
+            curs_col++;
+        }
+    
+        // redraw the whole line so shit stays synced
+        for (size_t i = 0; i < NUM_COLS; i++) {
+            vga_buffer[curs_row * NUM_COLS + i] = (struct Char){' ', default_color};
+        }
+    
+        for (size_t i = 0; i < input_len; i++) {
+            vga_buffer[curs_row * NUM_COLS + i] = (struct Char){input_buffer[i], default_color};
+        }
+    
+        update_cursor();
+    }    
  }
  
     // ----------------------------------------------------------------

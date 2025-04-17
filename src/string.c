@@ -134,6 +134,17 @@ char* strtok(char* str, const char* delim) {
     return token;
 }
 
+int stricmp(const char* a, const char* b) {
+    while (*a && *b) {
+        char ca = (*a >= 'A' && *a <= 'Z') ? *a + 32 : *a;
+        char cb = (*b >= 'A' && *b <= 'Z') ? *b + 32 : *b;
+        if (ca != cb) return (unsigned char)ca - (unsigned char)cb;
+        a++;
+        b++;
+    }
+    return (unsigned char)*a - (unsigned char)*b;
+}
+
 // --- conversions ---
 
 void itoa_base(int value, char* str, int base) {

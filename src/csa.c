@@ -86,7 +86,6 @@ syscall_table_t syscall_table = {
     .println = println,
     .newline = newline,
     .move_cursor_left = move_cursor_left,
-    .move_cursor_back = move_cursor_back,
     .enable_cursor = enable_cursor,
     .enable_bright_bg = enable_bright_bg
 };
@@ -137,7 +136,7 @@ void csa_feedthru(char byte) {
             return;
         }
 
-        if (addr < 0x10000 || addr > 0x800000) { // adjust these as per your memory map
+        if (addr != 0x200000) {
             println("CSA: Invalid memory address, get tae fuck.");
             csa_failed = 1;
             set_serial_waiting(0);
@@ -200,28 +199,4 @@ void execute_csa(void) {
     entry_func();
     println("CSA: ERROR! Payload returned... what the fuck?");
     reset(); // or enter an infinite halt loop
-}
-
-void csa_clear(void) {
-    if (csa_entrypoint && csa_expected_size > 0) {
-        // zero out loaded program space
-        memset(csa_entrypoint, 0, csa_expected_size);
-        println("CSA: Cleared previous payload.");
-    } else {
-        println("No app loaded!");
-    }
-
-    // wipe the syscall pointer just in case
-    syscall_table_t** syscall_ptr_slot = (syscall_table_t**)0x200000;
-    *syscall_ptr_slot = 0;
-
-    // reset CSA state
-    csa_entrypoint = 0;
-    csa_expected_size = -1;
-    csa_recv_index = 0;
-    csa_done = 0;
-    csa_failed = 0;
-
-    set_serial_waiting(0);
-    set_serial_command(1);
 }

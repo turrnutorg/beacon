@@ -16,7 +16,6 @@
  #include "time.h"
  #include "csa.h"
  #include "serial.h"
- #include "dungeon.h"
  #include <stdint.h>
  #include <stdarg.h>
  #include <stdbool.h>
@@ -28,57 +27,13 @@
  extern void* g_mb_info;
 
  extern int simas_main(void);
- // Command history buffer
- char command_history[COMMAND_HISTORY_SIZE][INPUT_BUFFER_SIZE];
- int command_history_index = 0;     // Index to store the next command
- int current_history_index = -1;    // Index for navigating history
- 
-int rainbow_running = 0; // 0 means stopped, 1 means running
-int rainbow_mode = 0; // 0 for both, 1 for text, 2 for background
-unsigned long last_rainbow_update = 0; // For timing the updates
+ extern int start_dungeon(void);
 
 void reset() {
     start();
 }
 
-void update_rainbow() {
-        if (!rainbow_running) return;  // Do nothing if rainbow isn't running
-
-        for (int i = 1; i <= 15; i++) {  // Colors from 1 to 15, skipping black
-            if (!rainbow_running) break; // If stopped, exit the loop
-
-            uint8_t fg = i; 
-            uint8_t bg = (rainbow_mode == 2 || rainbow_mode == 0) ? i : 0; // Cycle bg if it's "background" or "both"
-            
-            if (rainbow_mode == 1 || rainbow_mode == 0) {
-                repaint_screen(fg, bg);  // Update text and background
-            }
-
-            if (rainbow_mode == 0) {
-                repaint_screen(fg, bg);  // Update both
-            }
-
-            if (rainbow_mode == 2) {
-                repaint_screen(0, bg);  // Update only background
-            }
-
-            delay_ms(100); // Speed of color change (adjustable)
-        }
-    }
-
 int macos = 0; // macos mode
-
- /**
-  * Converts a string to lowercase.
-  */
- void to_lowercase(char* str) {
-     while (*str) {
-         if (*str >= 'A' && *str <= 'Z') {
-             *str += ('a' - 'A');
-         }
-         str++;
-     }
- }
  
  /**
   * Parses the input command into the base command and its arguments.
@@ -96,26 +51,19 @@ int macos = 0; // macos mode
          token = next_space + 1;
      } else {
          strcpy(cmd, token);
-         to_lowercase(cmd);
          return 0; // No arguments
      }
- 
-     to_lowercase(cmd);
- 
+  
      // Extract arguments
      while ((next_space = strchr(token, ' ')) != NULL && arg_count < MAX_ARGS) {
          strncpy(args[arg_count], token, next_space - token);
          args[arg_count][next_space - token] = '\0';
          token = next_space + 1;
-        // uncomment this to make all args lowercase
-        //  to_lowercase(args[arg_count]);
         arg_count++;
     }
     
     if (*token != '\0' && arg_count < MAX_ARGS) {
         strcpy(args[arg_count], token);
-        // uncomment this to make all args lowercase
-        //  to_lowercase(args[arg_count]);
          arg_count++;
      }
  
@@ -136,22 +84,13 @@ int macos = 0; // macos mode
   * Processes the entered command.
   */
  void process_command(const char* command) {
-     if (command[0] != '\0') {
-         strncpy(command_history[command_history_index], command, INPUT_BUFFER_SIZE - 1);
-         command_history[command_history_index][INPUT_BUFFER_SIZE - 1] = '\0'; // null-terminate
-         command_history_index = (command_history_index + 1) % COMMAND_HISTORY_SIZE;
-         current_history_index = -1;
-     }
- 
      char cmd[INPUT_BUFFER_SIZE] = {0};
      char args[MAX_ARGS][INPUT_BUFFER_SIZE] = {{0}};
      int arg_count = parse_command(command, cmd, args);
- 
-     to_lowercase(cmd);
- 
-    if (strcmp(cmd, "test") == 0) {
+  
+    if (stricmp(cmd, "test") == 0) {
          if (arg_count > 0) {
-             if (strcmp(args[0], "argument") == 0) {
+             if (stricmp(args[0], "argument") == 0) {
                  println("You passed the magic argument 'argument'. Congrats, I guess.");
              } else {
                  println("Unrecognized argument. Try harder.");
@@ -160,7 +99,7 @@ int macos = 0; // macos mode
              println("This is a test command, but you didn't even give me any arguments. Nice one.");
          }
  
-    } else if (strcmp(cmd, "echo") == 0) {
+    } else if (stricmp(cmd, "echo") == 0) {
         if (arg_count < 1) {
             println("Usage: echo [repeat_count] \"text\"");
         } else {
@@ -181,76 +120,49 @@ int macos = 0; // macos mode
 
             }
         }
-    } else if (strcmp(cmd, "clear") == 0) {
+    } else if (stricmp(cmd, "clear") == 0) {
          clear_screen();
-         curs_row = 0;
-         curs_col = 0;
-         row = 0;
-         col = 0;
-         retain_clock = 1;
-         println("Copyright (c) 2025 Turrnut Open Source Organization.");
+         retain_clock = 0;
+         gotoxy(0, 0);
          println("");
-         display_datetime();
-         update_cursor();
+         println("");
  
-    } else if (strcmp(cmd, "reboot") == 0) {
+    } else if (stricmp(cmd, "reboot") == 0) {
          println("Rebooting the system...");
          delay_ms(1000);
          reboot();
  
-    } else if (strcmp(cmd, "reset") == 0) {
+    } else if (stricmp(cmd, "reset") == 0) {
         println("Resetting the screen...");
         delay_ms(1000);
         reset();
 
-    } else if (strcmp(cmd, "rainbow") == 0) {
-        if (arg_count == 0) {
-            println("Usage: rainbow [text|background|both]");
-        } else {
-            if (strcmp(args[0], "text") == 0) {
-                rainbow_mode = 1; // Text rainbow
-                println("Starting rainbow text...");
-            } else if (strcmp(args[0], "background") == 0) {
-                rainbow_mode = 2; // Background rainbow
-                println("Starting rainbow background...");
-            } else if (strcmp(args[0], "both") == 0) {
-                rainbow_mode = 0; // Both text and background rainbow
-                println("Starting rainbow text and background...");
-            } else {
-                println("Invalid option. Usage: rainbow [text|background|both]");
-                rainbow_mode = 0;
-                return;
-            }
-            rainbow_running = 1; // Start rainbow cycling
-        }
-    } else if (strcmp(cmd, "shutdown") == 0) {
+    } else if (stricmp(cmd, "shutdown") == 0) {
          println("Shutting down the system...");
          delay_ms(1000);
          shutdown();
  
-    } else if (strcmp(cmd, "dungeon") == 0) {
+    } else if (stricmp(cmd, "dungeon") == 0) {
         println("Launching the dungeon game...");
-        delay_ms(1000);
+        delay_ms(100);
         start_dungeon();
  
-    } else if (strcmp(cmd, "program") == 0) {
+    } else if (stricmp(cmd, "program") == 0) {
         if (arg_count == 0) {
-            println("Usage: program [load|run|clear]");
-        } else if (strcmp(args[0], "load") == 0) {
+            println("Usage: program [load/run]");
+        } else if (stricmp(args[0], "load") == 0) {
             command_load(NULL);
-        } else if (strcmp(args[0], "run") == 0) {
+        } else if (stricmp(args[0], "run") == 0) {
             if (csa_entrypoint == NULL) {
                 println("Error: No program loaded, ya fuckin goblin.");
             } else {
                 println("Executing loaded program...");
                 execute_csa();
             }
-        } else if (strcmp(args[0], "clear") == 0) {
-            csa_clear();
         } else {
             println("Invalid argument. Use 'load' or 'run', ya eejit.");
         }
-    } else if (strcmp(cmd, "color") == 0) {
+    } else if (stricmp(cmd, "color") == 0) {
         if (arg_count != 2) {
             println("Usage: color <text color> <background color>");
         } else {
@@ -274,16 +186,13 @@ int macos = 0; // macos mode
                 println("Colors updated. Try not to blind yourself.");
                 }
         }
-    } else if (strcmp(cmd, "melody") == 0) {
+    } else if (stricmp(cmd, "melody") == 0) {
         melody_main();
-    } else if (strcmp(cmd, "poem") == 0) {
+    } else if (stricmp(cmd, "poem") == 0) {
         retain_clock = 0;
         // Clear the screen
         clear_screen();
-        row = 0;
-        col = 0;
-        curs_row = 0;
-        curs_col = 0;
+        gotoxy(0, 0);
     
         // Display the poem
         println("life is like a door");
@@ -306,7 +215,7 @@ int macos = 0; // macos mode
         println("into a 2007 toyota corolla\n");
         curs_row += 21;
 
-    } else if (strcmp(cmd, "macos") == 0) {
+    } else if (stricmp(cmd, "macos") == 0) {
         if (macos == 1) {
             set_color(GREEN_COLOR, WHITE_COLOR);
             repaint_screen(GREEN_COLOR, WHITE_COLOR);
@@ -319,7 +228,7 @@ int macos = 0; // macos mode
             macos = 1;
         }
         
-    } else if (strcmp(cmd, "help") == 0) {
+    } else if (stricmp(cmd, "help") == 0) {
         if(arg_count == 0){
             println("Available command categories:");
             println("1 - General commands");
@@ -330,7 +239,7 @@ int macos = 0; // macos mode
             println("To inspect one category in more detail, use \"help [number]\"");
             curs_row += 6;
             update_cursor();
-        } else if (strcmp(args[0], "1") == 0){
+        } else if (stricmp(args[0], "1") == 0){
             println("Available general commands");
             println("clear - Clear the screen (does not clear visual effects).");
             println("color <text color> <background color> - Change text and background colors.");
@@ -344,19 +253,19 @@ int macos = 0; // macos mode
             println("shutdown - Shutdown the system.");
             curs_row += 10;
             update_cursor();
-        } else if (strcmp(args[0], "2") == 0){
+        } else if (stricmp(args[0], "2") == 0){
             println("Available music commands");
             println("beep - <frequency> <duration> - Beep at a certain frequency and duration.");
             println("melody - <frequency> <duration> | [play/delete/clear/show] - Make a melody!");
             curs_row += 2;
             update_cursor();
-        } else if (strcmp(args[0], "3") == 0){
+        } else if (stricmp(args[0], "3") == 0){
             println("Available settings commands");
             println("settime <hour> <minute> <second> - Set the RTC time.");
             println("setdate <day> <month> <year> - Set the RTC date.");
             curs_row += 2;
             update_cursor();
-        } else if (strcmp(args[0], "4") == 0){
+        } else if (stricmp(args[0], "4") == 0){
             println("Available test commands");
             println("macos - no need for ths command... this is not MacOS...");
             println("poem - display the Beacon Poem");
@@ -366,7 +275,7 @@ int macos = 0; // macos mode
         } else {
             println("Usage: help [number]");
         }
-    } else if (strcmp(cmd, "settime") == 0) {
+    } else if (stricmp(cmd, "settime") == 0) {
         if (arg_count != 3) {
             println("Usage: settime <hour (24h time)> <minute> <second>");
         } else {
@@ -381,7 +290,7 @@ int macos = 0; // macos mode
                  println("RTC time updated. If it's wrong, that's on you.");
              }
          }
-    } else if (strcmp(cmd, "setdate") == 0) {
+    } else if (stricmp(cmd, "setdate") == 0) {
         if (arg_count != 3) {
             println("Usage: setdate <day(DD)> <month(MM)> <year(YY)>");
         } else {
@@ -396,9 +305,9 @@ int macos = 0; // macos mode
                 println("RTC date updated. If it's wrong, you're the moron who typed it.");
             }
         }
-    } else if (strcmp(cmd, "simas") == 0) {
+    } else if (stricmp(cmd, "simas") == 0) {
         simas_main();
-    } else if (strcmp(cmd, "beep") == 0) {
+    } else if (stricmp(cmd, "beep") == 0) {
         if (arg_count != 2) {
             println("Usage: beep <frequency in Hz> <duration in ms>");
         } else {
@@ -414,25 +323,25 @@ int macos = 0; // macos mode
                 beep(freq, duration);
             }
         }
-    } else if (strcmp(cmd, "serial") == 0) {
+    } else if (stricmp(cmd, "serial") == 0) {
         if (arg_count == 0) {
             println("Usage: serial [toggle|cmdenable|cmddisable]");
-        } else if (strcmp(args[0], "cmdenable") == 0) {
+        } else if (stricmp(args[0], "cmdenable") == 0) {
             set_serial_command(1);
             println("Serial command processing enabled.");
-        } else if (strcmp(args[0], "cmddisable") == 0) {
+        } else if (stricmp(args[0], "cmddisable") == 0) {
             set_serial_command(0);
             println("Serial command processing disabled.");
-        } else if (strcmp(args[0], "toggle") == 0) {
+        } else if (stricmp(args[0], "toggle") == 0) {
             serial_toggle();
         } else {
             println("Invalid argument.");
         }
     }
-    else if (strcmp(cmd, "") == 0) {
+    else if (stricmp(cmd, "") == 0) {
         return; // Do nothing if the command is empty
      } else {
-         move_cursor_back();
+         curs_col = 0;
          print("\"");
          print(cmd);
          println("\" is not a known command or executable program.");

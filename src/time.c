@@ -12,6 +12,36 @@
 #include "string.h"
 #include <stdint.h>
 
+#define PIT_CHANNEL0     0x40
+#define PIT_COMMAND      0x43
+#define PIT_MODE_RATE    0x34  // Channel 0 | Access lobyte/hibyte | Mode 2 | Binary
+#define PIT_FREQUENCY    1193182
+#define PIT_READBACK     0xE2  // Latch status of channel 0
+
+void pit_init_for_polling() {
+    uint16_t divisor = PIT_FREQUENCY / 1000; // 1ms tick
+    outb(PIT_COMMAND, PIT_MODE_RATE);        // setup channel 0
+    outb(PIT_CHANNEL0, divisor & 0xFF);      // lobyte
+    outb(PIT_CHANNEL0, (divisor >> 8));      // hibyte
+}
+
+int pit_out_high() {
+    outb(PIT_COMMAND, 0xE2); // latch status of channel 0
+    return inb(PIT_CHANNEL0) & 0x80; // OUT is bit 7
+}
+
+void delay_ms(uint32_t ms) {
+    uint32_t changes = 0;
+    int prev = pit_out_high();
+    while (changes < ms) {
+        int now = pit_out_high();
+        if (now != prev) {
+            changes++;
+            prev = now;
+        }
+    }
+}
+
 extern uint8_t default_color;
 
 const char* get_month_name(uint8_t month) {

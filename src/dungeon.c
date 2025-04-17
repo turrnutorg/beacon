@@ -8,7 +8,6 @@
  * Licensed under the GPL v3 License
  */
 
- #include "dungeon.h"
  #include "os.h"
  #include "console.h"
  #include "command.h"
@@ -152,7 +151,7 @@
      set_color(4, 4);
      repaint_screen(4, 4);
      beep(300, 200);
-     delay_ms(300);  // reduced delay for quicker feedback
+     delay_ms(25);  // reduced delay for quicker feedback
      set_color(current_fg_color, current_bg_color);
      repaint_screen(current_fg_color, current_bg_color);
  }
@@ -164,7 +163,7 @@
      set_color(2, 2);
      repaint_screen(2, 2);
      beep(1000, 100);
-     delay_ms(300);
+     delay_ms(25);
      set_color(current_fg_color, current_bg_color);
      repaint_screen(current_fg_color, current_bg_color);
  }
@@ -220,7 +219,7 @@
              for (int j = 0; j < lineLength; j++) {
                  char ch[2] = { buffer[j], '\0' };
                  print(ch);
-                 delay_ms(1500);
+                 delay_ms(50);
              }
              lineStart = i + 1;
              while (currentText[lineStart] == ' ' && currentText[lineStart] != '\0')

@@ -17,7 +17,6 @@ extern int retain_clock;
 void outb(uint16_t port, uint8_t value);
 uint8_t inb(uint16_t port);
 void start();
-void delay_ms(int milliseconds);
 void reboot();
 
 #endif // OS_H

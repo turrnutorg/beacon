@@ -13,15 +13,10 @@
 #include "command.h"
 #include "string.h"
 #include "speaker.h"
-#include "velocity.h"
 #include "time.h"
 #include "serial.h"
 #include "csa.h"
 #include <stdint.h>
-
-#define PIT_CHANNEL0 0x40
-#define PIT_COMMAND 0x43
-#define PIT_FREQUENCY 1193182
 
 // External variables from screen.c
 extern volatile struct Char* vga_buffer;
@@ -37,24 +32,6 @@ extern size_t curs_col;
 
 int retain_clock = 1;
 
-extern void* mb_info;
-void* g_mb_info = 0;
-
-void pit_wait(uint16_t ticks) {
-    outb(PIT_COMMAND, 0x30); // channel 0, mode 0, binary
-    outb(PIT_CHANNEL0, ticks & 0xFF); // low byte
-    outb(PIT_CHANNEL0, (ticks >> 8) & 0xFF); // high byte
-
-    // spinlock while bit 5 of port 0x61 is cleared (timer active)
-    while (!(inb(0x61) & 0x20));
-}
-
-void delay_ms(int ms) {
-    while (ms--) {
-        pit_wait(PIT_FREQUENCY / 1000); // wait 1 ms
-    }
-}
-
 void reboot() {
     asm volatile ("cli");
     while (inb(0x64) & 0x02);
@@ -63,14 +40,14 @@ void reboot() {
 }
 
 void start() {
+    pit_init_for_polling();
+
     serial_init();
     serial_toggle();
-    serial_write_string("serial command handler initialized\r\n");
+    serial_write_string("serial up n runnin\r\n");
 
     set_serial_command(1);
     set_serial_waiting(0);
-    serial_write_string("serial command handler set\r\n");
-    serial_write_string("Beacon booting...\r\n");
 
     clear_screen();
     set_color(GREEN_COLOR, WHITE_COLOR);
@@ -90,7 +67,6 @@ void start() {
 
     curs_row = 3;
     curs_col = 0;
-    g_mb_info = mb_info;
     input_len = 0;
     update_cursor();
 
@@ -112,7 +88,6 @@ void start() {
             }
         }
 
-        update_rainbow(); // whatever insane animation ye got going
         serial_poll(); // always poll for serial input
         csa_tick(); // <- call the safe csa processor here
     }
