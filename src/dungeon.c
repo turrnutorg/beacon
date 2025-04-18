@@ -1,11 +1,12 @@
 /**
+ * Copyright (c) Turrnut Open Source Organization
+ * Under the GPL v3 License
+ * See COPYING for information on how you can use this file
+ * Written by Xander Gomez (tuvalutortorture)
+ * 
  * dungeon.c - Ported dungeon game for Beacon with SFX and color effects
- *
  * Just a little tech demo I wrote for Beacon.
  *
- * Written by Xander Gomez (tuvalutortorture)
- * Copyright (c) 2025 Turrnut Open Source Organization
- * Licensed under the GPL v3 License
  */
 
  #include "os.h"

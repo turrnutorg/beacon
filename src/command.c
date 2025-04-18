@@ -16,6 +16,7 @@
  #include "time.h"
  #include "csa.h"
  #include "serial.h"
+ #include "games.h"
  #include <stdint.h>
  #include <stdarg.h>
  #include <stdbool.h>
@@ -34,6 +35,9 @@ void reset() {
 }
 
 int macos = 0; // macos mode
+
+int answer = -1; // number guessing game
+int tries = 0; // number guessing game
  
  /**
   * Parses the input command into the base command and its arguments.
@@ -87,7 +91,7 @@ int macos = 0; // macos mode
      char cmd[INPUT_BUFFER_SIZE] = {0};
      char args[MAX_ARGS][INPUT_BUFFER_SIZE] = {{0}};
      int arg_count = parse_command(command, cmd, args);
-  
+
     if (stricmp(cmd, "test") == 0) {
          if (arg_count > 0) {
              if (stricmp(args[0], "argument") == 0) {
@@ -234,10 +238,11 @@ int macos = 0; // macos mode
             println("1 - General commands");
             println("2 - Music commands");
             println("3 - Settings commands");
-            println("4 - Test commands");
+            println("4 - Games!");
+            println("5 - Test commands");
             println("");
             println("To inspect one category in more detail, use \"help [number]\"");
-            curs_row += 6;
+            curs_row += 7;
             update_cursor();
         } else if (stricmp(args[0], "1") == 0){
             println("Available general commands");
@@ -246,7 +251,6 @@ int macos = 0; // macos mode
             println("echo <repetions> <\"text\"> - Echo the text back to the console. /n for new line.");
             println("program [load|run|clear] - Load, run, or de-load a program from Serial (COM1).");
             println("simas - Run the SIMAS interpreter.");
-            println("dungeon - Run the dungeon game.");
             println("help - Display this help message.");
             println("reboot - Reboot the system.");
             println("reset - Reset the screen to default.");
@@ -266,6 +270,12 @@ int macos = 0; // macos mode
             curs_row += 2;
             update_cursor();
         } else if (stricmp(args[0], "4") == 0){
+            println("Available built-in games:");
+            println("dungeon - The Beacon Dungeon Game");
+            println("guessnum - a number guessing game");
+            curs_row += 2;
+            update_cursor();
+        } else if (stricmp(args[0], "5") == 0){
             println("Available test commands");
             println("macos - no need for ths command... this is not MacOS...");
             println("poem - display the Beacon Poem");
@@ -337,8 +347,25 @@ int macos = 0; // macos mode
         } else {
             println("Invalid argument.");
         }
-    }
-    else if (stricmp(cmd, "") == 0) {
+    }  else if (stricmp(cmd, "guessnum") == 0) {
+        guessnum();
+        answer = rand(101);
+    } else if (answer != -1) {
+        
+        int guess = atoi(cmd);
+        if (guess != answer) {
+            tries ++;
+            if (guess > answer) {
+                println("Too large. Try again.");
+            } else {
+                println("Too small. Try again.");
+            }
+        } else {
+            println("YOU WON THE NUMBER GUESSING GAME!!");
+            tries = 0;
+            answer = -1;
+        }
+    } else if (stricmp(cmd, "") == 0) {
         return; // Do nothing if the command is empty
      } else {
          curs_col = 0;
