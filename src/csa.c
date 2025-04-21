@@ -17,7 +17,8 @@
 #include "time.h"
 #include "keyboard.h"
 #include "speaker.h"
-#include "os.h"  // assuming reset() + extra_rand() are here
+#include "os.h"
+#include "math.h"
 #include "csa.h"
 
 syscall_table_t syscall_table = {
@@ -87,7 +88,53 @@ syscall_table_t syscall_table = {
     .newline = newline,
     .move_cursor_left = move_cursor_left,
     .enable_cursor = enable_cursor,
-    .enable_bright_bg = enable_bright_bg
+    .enable_bright_bg = enable_bright_bg,
+
+    // ─── fixed-point math ───────────────
+    .fabs = fabs,
+    .sqrt = sqrt,
+    .pow = pow,
+    .exp = exp,
+    .log = log,
+    .fmod = fmod,
+    .sin = sin,
+    .cos = cos,
+    .tan = tan,
+    .asin = asin,
+    .acos = acos,
+    .atan = atan,
+    .sinh = sinh,
+    .cosh = cosh,
+    .tanh = tanh,
+    .floor = floor,
+    .ceil = ceil,
+    .round = round,
+    .signbit = signbit,
+    .isnan = isnan,
+    .isinf = isinf,
+
+    // ─── float math ───────────────
+    .fabsf = fabsf,
+    .sqrtf = sqrtf,
+    .powf = powf,
+    .expf = expf,
+    .logf = logf,
+    .fmodf = fmodf,
+    .sinf = sinf,
+    .cosf = cosf,
+    .tanf = tanf,
+    .asinf = asinf,
+    .acosf = acosf,
+    .atanf = atanf,
+    .sinhf = sinhf,
+    .coshf = coshf,
+    .tanhf = tanhf,
+    .floorf = floorf,
+    .ceilf = ceilf,
+    .roundf = roundf,
+    .signbitf = signbitf,
+    .isnanf = isnanf,
+    .isinff = isinff
 };
 
 #define CSA_MAGIC 0xC0DEFACE
@@ -136,7 +183,7 @@ void csa_feedthru(char byte) {
             return;
         }
 
-        if (addr != 0x200000) {
+        if (addr < 0x200000 || addr > 0x800000) { // adjust these as per your memory map
             println("CSA: Invalid memory address, get tae fuck.");
             csa_failed = 1;
             set_serial_waiting(0);
@@ -175,6 +222,7 @@ void csa_tick(void) {
         println("CSA: Ready to execute. Type 'program run' to start.");
         curs_row++;
         update_cursor();
+        execute_csa();
     }
 }
 
