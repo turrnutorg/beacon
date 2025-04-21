@@ -68,7 +68,7 @@
  int steps = 0;
  int enemiesDefeated = 0;
  int bossesDefeated = 0;
- int floor = 1;
+ int dungeon_floor = 1;
  int textDisplayed = 0;
  int playerHealth = 100;
  int playerStamina = 50;
@@ -119,7 +119,7 @@
      steps = 0;
      enemiesDefeated = 0;
      bossesDefeated = 0;
-     floor = 1;
+     dungeon_floor = 1;
      textDisplayed = 0;
      playerHealth = 100;
      playerStamina = 50;
@@ -281,7 +281,7 @@
      print(statusBuffer);
  
      gotoxy(0, 5);
-     snprintf(statusBuffer, sizeof(statusBuffer), "Floor: %d", floor);
+     snprintf(statusBuffer, sizeof(statusBuffer), "Floor: %d", dungeon_floor);
      print(statusBuffer);
  
      gotoxy(0, 6);
@@ -654,14 +654,14 @@ void attackMenu(int *monsterHealth, int *retaliate) {
         if (rand(10) < 2) {
             isMimic = 1;
             monsterName = "Mimic";
-            baseHealth = rand(20) + 100 + (floor * 10);
+            baseHealth = rand(20) + 100 + (dungeon_floor * 10);
             change_color(14, 0);
         } else {
             const char *normalMonsters[] = {"Goblin", "Troll", "Skeleton", "Wizard", "Zombie-sized Chicken", "Bandit", "Rabid Dog"};
             int normalCount = 7;
             int idx = rand(normalCount) % normalCount;
             monsterName = normalMonsters[idx];
-            baseHealth = rand(60) + 30 + (floor * 5);
+            baseHealth = rand(60) + 30 + (dungeon_floor * 5);
             change_color(15, 0);
         }
         monsterHealth = baseHealth;
@@ -729,7 +729,7 @@ void attackMenu(int *monsterHealth, int *retaliate) {
                 snprintf(msg, sizeof(msg), "Congrats! Ye slayed the boss! Yer attributes increase!");
                 loot *= 3;
                 healthPotions += 1;
-                floor++;
+                dungeon_floor++;
                 permanentHealthBonus += 10;
                 permanentStaminaBonus += 10;
                 damageBonus += 3;
@@ -1014,7 +1014,7 @@ void exploreDungeon() {
             encounterShrine();
         }
 
-        if (floor == 6) {
+        if (dungeon_floor == 6) {
             showText("Congratulations! You have cleared all the dungeon floors.");
             endGame();
         }
