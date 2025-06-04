@@ -1,10 +1,16 @@
-#include "serial.h"
+/**
+ * Copyright (c) Turrnut Open Source Organization
+ * Under the GPL v3 License
+ * See COPYING for information on how you can use this file
+ * 
+ * cube.c
+ * This is a tech demo for beacon, intended to show off math.c
+ */
+
 #include "string.h"
 #include "command.h"
 #include "console.h"
-#include "port.h"
 #include "screen.h"
-#include "time.h"
 #include "keyboard.h"
 #include "math.h"
 #include "os.h"

@@ -29,6 +29,7 @@
  extern int simas_main(void);
  extern void main_menu_loop(void);
  extern void cube_main(void);
+ extern void paint_main(void);
 
 void reset() {
     start();
@@ -255,7 +256,8 @@ int tries = 0; // number guessing game
             println("games - Launch the game menu.");
             println("poem - display the Beacon Poem");
             println("cube - Render a basic 3D cube in the console.");
-            curs_row += 5;
+            println("paint - Open TurrPaint.");
+            curs_row += 6;
             update_cursor();
         } else if (stricmp(args[0], "3") == 0){
             println("Available settings commands");
@@ -307,8 +309,9 @@ int tries = 0; // number guessing game
         }
     } else if (stricmp(cmd, "cube") == 0) {
         cube_main();
-    }
-    else if (stricmp(cmd, "simas") == 0) {
+    } else if (stricmp(cmd, "paint") == 0) {
+        paint_main();
+    } else if (stricmp(cmd, "simas") == 0) {
         simas_main();
     } else if (stricmp(cmd, "beep") == 0) {
         if (arg_count != 2) {

@@ -95,6 +95,16 @@ void println(const char *str)
     serial_write('\n');  // Send newline to serial port
 }
 
+void print_hex(uintptr_t val) {
+    char hex[] = "0123456789ABCDEF";
+    char buf[11] = "0x00000000";
+    for (int i = 9; i >= 2; i--) {
+        buf[i] = hex[val & 0xF];
+        val >>= 4;
+    }
+    println(buf);
+}
+
 void set_color(uint8_t foreground, uint8_t background)
 {
     default_color = foreground + (background << 4);  // Update color

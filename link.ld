@@ -26,6 +26,12 @@ SECTIONS {
         stack_top = .;
     }
 
+    .heap ALIGN(4K) (NOLOAD) : {
+        __heap_start = .;
+        . += 0x100000; /* 1 MB heap */
+        __heap_end = .;
+    }
+
     /DISCARD/ : {
         *(.fini_array*)
         *(.comment)

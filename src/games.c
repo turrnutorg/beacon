@@ -1,21 +1,22 @@
 /**
- * copyright (c) turrnut open source organization
- * under the gpl v3 license
- * see copying for information on how you can use this file
- *
- * games.c  (merged: cleaned code structure with old dialogue)
+ * Copyright (c) Turrnut Open Source Organization
+ * Under the GPL v3 License
+ * See COPYING for information on how you can use this file
+ * 
+ * games.c
  */
-#include "screen.h"   // for clear_screen(), set_color(), etc.
-#include "keyboard.h" // for getch(), kbhit()
-#include "speaker.h"  // for beep(), etc.
-#include "time.h"     // for get_time(), set_time(), etc.
-#include "console.h"  // for print(), gotoxy(), col/row globals, update_cursor()
-#include "string.h"   // for strcmp(), strcpy(), strstr(), etc.
-#include "math.h"     // for abs(), etc.
-#include "command.h"  // for command_t, etc.
-#include "os.h"       // for reset(), etc.
-#include <stddef.h>   // for size_t, null
-#include <stdint.h>   // for uint8_t, uint32_t, etc.
+
+#include "screen.h"
+#include "keyboard.h"
+#include "speaker.h"
+#include "time.h"
+#include "console.h"
+#include "string.h"
+#include "math.h"
+#include "command.h"
+#include "os.h"
+#include <stddef.h>
+#include <stdint.h>
 
 /*─────────────────────────────────────────────────────────────────────────────
   helper to print a positive integer (no leading zeros except for single-digit)

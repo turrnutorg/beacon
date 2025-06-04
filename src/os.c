@@ -17,6 +17,9 @@
 #include "serial.h"
 #include "csa.h"
 #include <stdint.h>
+#include "memory.h" // for malloc_init()
+extern uint8_t __heap_start;
+extern uint8_t __heap_end;
 
 // External variables from screen.c
 extern volatile struct Char* vga_buffer;
@@ -45,6 +48,8 @@ void start() {
     serial_init();
     serial_toggle();
     serial_write_string("serial up n runnin\r\n");
+
+    memory_init((void*)&__heap_start, (size_t)((uintptr_t)&__heap_end - (uintptr_t)&__heap_start));
 
     set_serial_command(1);
     set_serial_waiting(0);
@@ -75,7 +80,6 @@ void start() {
     while (1) {
         uint8_t scancode;
 
-        // GET FROM BUFFER, NOT PORT
         if (buffer_get(&scancode)) {
             handle_keypress(scancode);
         }
@@ -88,7 +92,8 @@ void start() {
             }
         }
 
-        serial_poll(); // always poll for serial input
-        csa_tick(); // <- call the safe csa processor here
+        serial_poll();
+        csa_tick();
     }
 }
+
