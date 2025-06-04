@@ -11,6 +11,7 @@
 #include "port.h"
 #include "time.h"
 #include "serial.h"
+#include "string.h"
 
 // Define col and row in this file
 size_t col = 0;
@@ -127,14 +128,6 @@ void repaint_screen(uint8_t fg_color, uint8_t bg_color) {
     }
 }
 
-// global seed, cos why the fuck not
-unsigned int rng_seed = 123456789;
-
-// call this tae set the seed, if ye give a toss
-void srand(unsigned int seed) {
-    rng_seed = seed;
-}
-
 int extra_rand() {
     uint8_t sec = cmos_read(0x00);
     uint8_t min = cmos_read(0x02);
@@ -152,12 +145,6 @@ int extra_rand() {
     seed = seed ^ (seed << 5);
 
     return (int)(seed & 0x7FFFFFFF); // keep it positive like yer gran before she saw your code
-}
-
-// random number between 0 and max-1
-unsigned int rand(unsigned int max) {
-    rng_seed = rng_seed * 1103515245 + 12345;
-    return (rng_seed >> 16) % max;
 }
 
  // implement gotoxy: set os print positions and update hardware cursor

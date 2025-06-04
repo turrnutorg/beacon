@@ -17,7 +17,6 @@
 #include "serial.h"
 #include "csa.h"
 #include <stdint.h>
-#include "memory.h" // for malloc_init()
 extern uint8_t __heap_start;
 extern uint8_t __heap_end;
 
@@ -48,9 +47,7 @@ void start() {
     serial_init();
     serial_toggle();
     serial_write_string("serial up n runnin\r\n");
-
-    memory_init((void*)&__heap_start, (size_t)((uintptr_t)&__heap_end - (uintptr_t)&__heap_start));
-
+    
     set_serial_command(1);
     set_serial_waiting(0);
 

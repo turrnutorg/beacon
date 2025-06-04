@@ -100,7 +100,6 @@ float powf(float base, float exp) {
     return expf(exp * logf(base));
 }
 
-
 // ─── fixed‑point wrappers (Q16.16 → float → Q16.16) ─────────────────────────
 static inline fixed_t to_fixed(float v) { return (fixed_t)(v * FIXED_ONE); }
 static inline float    to_float(fixed_t v) { return (float)v / FIXED_ONE; }

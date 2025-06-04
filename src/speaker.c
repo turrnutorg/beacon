@@ -14,6 +14,7 @@
 #include "command.h"
 #include "speaker.h"
 #include "screen.h"
+#include "stdlib.h"
  
 #define MELODY_QUEUE_SIZE 256
 #define MAX_LINE_LEN 1024
@@ -193,10 +194,10 @@ void beep(uint32_t frequency, uint32_t ms) {
          return;
      }
      for (int i = 0; i < count; i++) {
-         int freq = (int)rand(14001) + 400;      // 400 to 14400 Hz
-         int duration = (int)rand(4751) + 250;     // 250 to 5000 ms
-         int fg = (int)rand(16);                   // 0 to 15
-         int bg = (int)rand(16);                   // 0 to 15
+         int freq = rand() % 14001 + 400; // 400 to 14400 Hz
+         int duration = rand() % 4751 + 250;     // 250 to 5000 ms
+         int fg = rand() % 16;                   // 0 to 15
+         int bg = rand() % 16;                   // 0 to 15
          melodyQueue[melodyQueueSize].freq = freq;
          melodyQueue[melodyQueueSize].duration = duration;
          melodyQueue[melodyQueueSize].fg = fg;

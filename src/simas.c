@@ -29,6 +29,7 @@
  #include "console.h"
  #include "keyboard.h"
  #include "command.h"
+ #include "stdlib.h"
  #include <stdarg.h>
  #include <stdint.h>
  

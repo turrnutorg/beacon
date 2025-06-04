@@ -14,8 +14,8 @@
  
 #define UP_ARROW	-1 // Using arrows causes
 #define DOWN_ARROW	-2 // snake to always go up
-#define LEFT_ARROW	-3 // for some reason
-#define RIGHT_ARROW	-4
+#define LEFT_ARROW	-3 // due to getch_nb()
+#define RIGHT_ARROW	-4 // returning -1
 #define ESCAPE		'`'
 
 #define WIDTH 80
@@ -106,8 +106,8 @@ uint8_t is_in_borders(uint8_t x, uint8_t y) {
 void get_random_free_pos(uint8_t *x, uint8_t *y) {
 	size_t tries = 0;
 	while(tries < 10) {
-		*x = (uint8_t)sys->rand(WIDTH - 1);
-		*y = (uint8_t)sys->rand(HEIGHT - 1);
+		*x = (uint8_t)sys->rand() % (WIDTH - 1);
+		*y = (uint8_t)sys->rand() % (HEIGHT - 1);
 
 		if (map[*y][*x] != 0 || !is_in_borders(*x, *y + 1)) {
 			// The position is occupied, go look somewhere else

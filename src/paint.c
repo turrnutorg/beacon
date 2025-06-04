@@ -10,6 +10,7 @@
 #include "screen.h"
 #include "console.h"
 #include "keyboard.h"
+#include "stdlib.h"
 #include <stdint.h>
 
 #define WIDTH 80

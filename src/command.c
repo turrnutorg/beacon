@@ -16,6 +16,7 @@
  #include "time.h"
  #include "csa.h"
  #include "serial.h"
+ #include "stdlib.h"
  #include <stdint.h>
  #include <stdarg.h>
  #include <stdbool.h>

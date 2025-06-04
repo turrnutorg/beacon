@@ -2,7 +2,7 @@
  * Copyright (c) Turrnut Open Source Organization
  * Under the GPL v3 License
  * See COPYING for information on how you can use this file
- * Written by Xander Gomez (tuvalutorture)
+ * Written by Xander Gomez (tuvalutortorture)
  * 
  * dungeon.c - Ported dungeon game for Beacon with SFX and color effects
  * Just a little tech demo I wrote for Beacon.
@@ -17,6 +17,7 @@
  #include "keyboard.h"
  #include "time.h"
  #include "string.h"
+ #include "stdlib.h"
  #include <stdarg.h>
  #include <stdint.h>
  
@@ -30,7 +31,7 @@
  
  // NEW FEATURE: Equipment definitions & battle position
  #define MAX_EQUIP 10
-
+ 
  extern void main_menu_loop(void);
  
  typedef struct {
@@ -79,7 +80,7 @@
  int damageBonus = 0;
  int permanentHealthBonus = 0;
  int permanentStaminaBonus = 0;
-
+ 
  // special case for arrow fired from back row
  int arrowFiredFromBackRow = 0;
  
@@ -96,7 +97,7 @@
  
  // RTC start time globals for playtime tracking
  uint8_t rtc_start_hour = 0, rtc_start_minute = 0, rtc_start_second = 0;
-
+ 
  /*
   * change_color: sets the foreground and background colors and repaints the screen.
   */
@@ -144,9 +145,8 @@
     playerStamina += 10;
     if (playerStamina > maxStamina + permanentStaminaBonus)
         playerStamina = maxStamina + permanentStaminaBonus;
-}
-
-
+ }
+ 
  /*
   * flash_damage: flashes screen red.
   */
@@ -420,7 +420,7 @@
      if (selection == 0) {
          if (healthPotions > 0) {
              healthPotions--;
-             heal = rand(30) + 20;
+             heal = rand() % 30 + 20;
              playerHealth += heal;
              if (playerHealth > maxHealth + permanentHealthBonus)
                  playerHealth = maxHealth + permanentHealthBonus;
@@ -433,7 +433,7 @@
      } else if (selection == 1) {
          if (staminaPotions > 0) {
              staminaPotions--;
-             stamina = rand(20) + 15;
+             stamina = rand() % 20 + 15;
              playerStamina += stamina;
              if (playerStamina > maxStamina + permanentStaminaBonus)
                  playerStamina = maxStamina + permanentStaminaBonus;
@@ -482,18 +482,18 @@
          updateText("Ye skid back tae the rear, but yer attacks feel weaker.");
      displayText();
  }
-
-  /*
-  * runAway: remains unchanged.
+ 
+ /*
+  * runAway: remains unchanged except for rand usage.
   */
  void runAway() {
     int damage;
     if (playerStamina < 10) {
         escapeFailed = 1;
         snprintf(msg, sizeof(msg), "Not enough stamina to run away!");
-    } else if (rand(10) < 2) {
+    } else if (rand() % 10 < 2) {
         escapeFailed = 1;
-        damage = rand(11) + 5;
+        damage = rand() % 11 + 5;
         playerHealth -= damage;
         flash_damage();
         snprintf(msg, sizeof(msg), "Failed to escape! Took %d damage.", damage);
@@ -507,7 +507,7 @@
         change_color(2, 15);
     }
     showText(msg);
-}
+ }
  
  void endGame() {
     clear_screen();
@@ -519,7 +519,7 @@
     int hours = playTime / 3600;
     int minutes = (playTime % 3600) / 60;
     int seconds = playTime % 60;
-
+ 
     print("\nGame Over! Thanks for playing.\n\n");
     char timeBuffer[64];
     snprintf(timeBuffer, sizeof(timeBuffer), "Time played: %d:%d:%d\n", hours, minutes, seconds);
@@ -528,10 +528,10 @@
     getch();
     main_menu_loop(); // return to main menu
     dungeon_reset(); // reset game state
-}
-
-
-void attackMenu(int *monsterHealth, int *retaliate) {
+ }
+ 
+ 
+ void attackMenu(int *monsterHealth, int *retaliate) {
     char *attackOptions[] = {
         "Normal Attack (10 stamina)", 
         "Heavy Attack (20 stamina)", 
@@ -540,16 +540,16 @@ void attackMenu(int *monsterHealth, int *retaliate) {
         "Cancel", 
         "Toggle Position"
     };
-
+ 
     int selection = navigateMenu(attackOptions, 6);
     int damage = 0;
-
+ 
     if (selection == 5) {
         togglePosition();
         *retaliate = 0;
         return;
     }
-
+ 
     if (selection == 4) {
         *retaliate = 0;
         updateText("Attack canceled.");
@@ -559,7 +559,7 @@ void attackMenu(int *monsterHealth, int *retaliate) {
         int cost[] = {10, 20, 0, 5};
         int baseDamage[] = {10, 20, 5, 15};
         int range[] = {6, 11, 4, 16};
-
+ 
         if ((selection == 3 && (arrows <= 0 || playerStamina < cost[selection])) ||
             (playerStamina < cost[selection])) {
             updateText(selection == 3 ? "Not enough stamina or no arrows left!" : "Not enough stamina!");
@@ -567,40 +567,40 @@ void attackMenu(int *monsterHealth, int *retaliate) {
             displayText();
             return;
         }
-
+ 
         int arrowFired = 0;
         playerStamina -= cost[selection];
-
+ 
         if (selection == 3) {
             arrows--;
             arrowFired = 1;
             arrowFiredFromBackRow = 0;
         }
-
-        damage = rand(range[selection]) + baseDamage[selection];
-
+ 
+        damage = (rand() % range[selection]) + baseDamage[selection];
+ 
         // apply manual sharpening bonus if activated
         if (activeSharpBonus > 0) {
             damage += activeSharpBonus;
             updateText("Your sharpened blade slices with extra fury (+%d damage)!", activeSharpBonus);
         }
-
+ 
         // Adjust for back row
         if (battlePosition == 1)
             damage /= 2;
-
+ 
         if (battlePosition == 1 && arrowFired)
             arrowFiredFromBackRow = 1;
         else
             arrowFiredFromBackRow = 0;
-
+ 
         // Handle miss/crit chance
-        int missRoll = rand(100);
-        int critRoll = rand(100);
-
+        int missRoll = rand() % 100;
+        int critRoll = rand() % 100;
+ 
         int missChance = 10; // base miss chance %
         int critChance = 10; // base crit chance %
-
+ 
         if (selection == 1) { // heavy
             missChance = (int)(missChance * 1.5);  // 15%
             critChance = (int)(critChance * 1.5);  // 15%
@@ -608,10 +608,10 @@ void attackMenu(int *monsterHealth, int *retaliate) {
             missChance = (int)(missChance * 0.5);  // 5%
             critChance = (int)(critChance * 0.5);  // 5%
         }
-
+ 
         if (battlePosition == 1)
             missChance += 20;
-
+ 
         if (missRoll < missChance) {
             damage = 0;
             updateText("Ye completely missed!");
@@ -626,10 +626,10 @@ void attackMenu(int *monsterHealth, int *retaliate) {
             updateText(msg);
         }
     }
-
+ 
     displayText();
-}
-
+ }
+ 
  /*
   * encounterEnemy: handles combat against an enemy (or boss).
   * Now adjusted for proper text and shield removal.
@@ -640,65 +640,65 @@ void attackMenu(int *monsterHealth, int *retaliate) {
     int isMimic = 0;
     int crit = 0;
     battlePosition = 0; // reset battle position to front row
-
+ 
     if (isBoss) {
         char *bosses[] = {"Ironclad King", "Ravager of Souls", "Stormbringer", "The Herald of Despair", "Voidcaller"};
         int bossCount = 5;
-        baseHealth = rand(120) + 150;
+        baseHealth = (rand() % 120) + 150;
         monsterHealth = baseHealth;
         set_color(0, 4);
         repaint_screen(0, 4);
         current_fg_color = 0;
         current_bg_color = 4;
-        snprintf(msg, sizeof(msg), "Ye encounter the %s!", bosses[rand(bossCount) % bossCount]);
+        snprintf(msg, sizeof(msg), "Ye encounter the %s!", bosses[rand() % bossCount]);
         showText(msg);
     } else {
         const char *monsterName;
-        if (rand(10) < 2) {
+        if (rand() % 10 < 2) {
             isMimic = 1;
             monsterName = "Mimic";
-            baseHealth = rand(20) + 100 + (dungeon_floor * 10);
+            baseHealth = (rand() % 20 + 100) + (dungeon_floor * 10);
             change_color(14, 0);
         } else {
             const char *normalMonsters[] = {"Goblin", "Troll", "Skeleton", "Wizard", "Zombie-sized Chicken", "Bandit", "Rabid Dog"};
             int normalCount = 7;
-            int idx = rand(normalCount) % normalCount;
+            int idx = rand() % normalCount;
             monsterName = normalMonsters[idx];
-            baseHealth = rand(60) + 30 + (dungeon_floor * 5);
+            baseHealth = (rand() % 60) + 30 + (dungeon_floor * 5);
             change_color(15, 0);
         }
         monsterHealth = baseHealth;
         snprintf(msg, sizeof(msg), "A wild %s appeared!", monsterName);
         showText(msg);
     }
-
+ 
     while (monsterHealth > 0 && playerHealth > 0) {
         char *combatOptions[] = {"Attack Menu", "Item Menu", "Defend", "Run", "Scan", "Toggle Position"};
         displayStatus();
         displayInventory();
         displayText();
         retaliate = 1;
-
+ 
         action = navigateMenu(combatOptions, 6);
-
+ 
         switch (action) {
             case 0:
                 defended = 0;
                 attackMenu(&monsterHealth, &retaliate);
                 break;
-
+ 
             case 1:
                 useItemMenu();
                 retaliate = 0;
                 break;
-
+ 
             case 2:
                 defended = 1;
                 playerStamina += 5;
                 if (playerStamina > maxStamina + permanentStaminaBonus)
                     playerStamina = maxStamina + permanentStaminaBonus;
                 break;
-
+ 
             case 3:
                 if (isBoss) {
                     showText("Can't run away from a boss!");
@@ -709,21 +709,21 @@ void attackMenu(int *monsterHealth, int *retaliate) {
                 }
                 retaliate = 0;
                 break;
-
+ 
             case 4:
                 snprintf(msg, sizeof(msg), "Enemy has %d / %d health.", monsterHealth, baseHealth);
                 showText(msg);
                 retaliate = 0;
                 break;
-
+ 
             case 5:
                 togglePosition();
                 retaliate = 0;
                 break;
         }
-
+ 
         if (monsterHealth <= 0) {
-            int loot = rand(20) + 10;
+            int loot = rand() % 20 + 10;
             if (isMimic) {
                 loot *= 2;
                 healthPotions++;
@@ -749,21 +749,21 @@ void attackMenu(int *monsterHealth, int *retaliate) {
                 showText("The air grows thick, ye feel a sinister presence...");
             }
         }
-
+ 
         if (retaliate && monsterHealth > 0) {
-            int baseDmg = rand(isBoss ? 15 : 8) + (isBoss ? 10 : 3);
+            int baseDmg = (rand() % (isBoss ? 15 : 8)) + (isBoss ? 10 : 3);
             float dmg = baseDmg;
             crit = 0;
-
+ 
             if (arrowFiredFromBackRow) {
                 arrowFiredFromBackRow = 0;
                 dmg = 0;
                 snprintf(msg, sizeof(msg), "The monster tried to attack, but couldn't reach ye!");
-            } else if (rand(10) == 0) {
+            } else if (rand() % 10 == 0) {
                 dmg *= 2;
                 crit = 1;
                 snprintf(msg, sizeof(msg), "The monster scored a critical hit and dealt %d damage!", (int)dmg);
-            } else if (rand(10) == 0) {
+            } else if (rand() % 10 == 0) {
                 dmg = 0;
                 snprintf(msg, sizeof(msg), "The monster completely missed!");
             } else if (defended == 1) {
@@ -785,33 +785,33 @@ void attackMenu(int *monsterHealth, int *retaliate) {
             } else {
                 snprintf(msg, sizeof(msg), "The monster retaliates and deals %d damage!", (int)dmg);
             }
-
+ 
             if (battlePosition == 1)
                 dmg /= 2;
-
+ 
             if (!crit && activeArmorBonus > 0) {
                 dmg -= activeArmorBonus;
                 if (dmg < 0)
                     dmg = 0;
                 snprintf(msg, sizeof(msg), "Yer extra armor reduces the damage by %d!", activeArmorBonus);
             }
-
+ 
             playerHealth -= (int)dmg;
             if ((int)dmg >= 1)
                 flash_damage();
             showText(msg);
-
+ 
             if (playerHealth <= 0) {
                 is_playing = 0;
                 endGame();
             }
         }
     }
-
+ 
     change_color(2, 15);
-}
-
-
+ }
+ 
+ 
  /*
   * encounterShop: handles shop encounters.
   * Added price variance for equipment and restricts shield to one.
@@ -819,10 +819,10 @@ void attackMenu(int *monsterHealth, int *retaliate) {
  void encounterShop() {
      change_color(15, 1);
      char *shopOptions[] = {"Buy Items", "Rest", "Buy Ticket", "Leave"};
-     int healthPotionCost = rand(30) + 40;
-     int staminaPotionCost = rand(10) + 25;
-     int elixirCost = rand(50) + 180;
-     int arrowCost = rand(20) + 25;
+     int healthPotionCost = rand() % 30 + 40;
+     int staminaPotionCost = rand() % 10 + 25;
+     int elixirCost = rand() % 50 + 180;
+     int arrowCost = rand() % 20 + 25;
      int selection;
      int purchaseSelection;
      int shopRestUsed = 0;
@@ -835,9 +835,9 @@ void attackMenu(int *monsterHealth, int *retaliate) {
              char *purchaseOptions[] = {"Buy Health Potion", "Buy Stamina Potion", "Buy Elixir", "Buy Arrows", "Buy Armor", "Buy Sharpening Tool", "Buy Shield", "Cancel"};
              showText("What will ye buy?");
              // Calculate variable prices for new equipment:
-             int armorCost = 50 + (rand(11) - 5);       // 45-55g
-             int sharpCost = 50 + (rand(11) - 5);         // 45-55g
-             int shieldCost = 50 + (rand(11) - 5);        // 45-55g
+             int armorCost = 50 + (rand() % 11 - 5);       // 45-55g
+             int sharpCost = 50 + (rand() % 11 - 5);       // 45-55g
+             int shieldCost = 50 + (rand() % 11 - 5);      // 45-55g
              snprintf(msg, sizeof(msg),
                  "Health pot: %dg, Stamina pot: %dg, Elixir: %dg, Arrows: %dg, Armor: %dg, Sharpening: %dg, Shield: %dg.",
                  healthPotionCost, staminaPotionCost, elixirCost, arrowCost, armorCost, sharpCost, shieldCost);
@@ -921,152 +921,151 @@ void attackMenu(int *monsterHealth, int *retaliate) {
      change_color(2, 15);
  }
  
-void encounterShrine() {
-    char *sacrificeOptions[] = {"Sacrifice Gold (125)", "Sacrifice an Item", "Sacrifice Health", "Sacrifice Stamina", "Return"};
-    int selection, upgradeSelection;
-    showText("Ye stumble upon a mysterious shrine. The air is thick wi' ancient dread.");
-    selection = navigateMenu(sacrificeOptions, 5);
-
-    int sacrificeMade = 0;
-
-    if (selection == 0) {
-        if (gold >= 125) {
-            gold -= 125;
-            sacrificeMade = 1;
-            updateText("125 gold sacrificed.");
-        } else {
-            updateText("Ye dinnae have enough gold to sacrifice!");
-        }
-    } else if (selection == 1) {
-        if (healthPotions >= 3) {
-            healthPotions -= 3;
-            sacrificeMade = 1;
-            updateText("A set of 2 health potions has been sacrificed.");
-        } else if (staminaPotions >= 5) {
-            staminaPotions -= 5;
-            sacrificeMade = 1;
-            updateText("A set of 4 stamina potions has been sacrificed.");
-        } else if (elixirs >= 1) {
-            elixirs--;
-            sacrificeMade = 1;
-            updateText("An elixir has been sacrificed.");
-        } else {
-            updateText("Ye have no items to sacrifice!");
-        }
-    } else if (selection == 2) {
-        if (maxHealth + permanentHealthBonus > 10) {
-            permanentHealthBonus -= 10;
-            sacrificeMade = 1;
-            updateText("Ye sacrificed 10 max health.");
-        } else {
-            updateText("Ye dinnae have enough max health to sacrifice!");
-        }
-    } else if (selection == 3) {
-        if (maxStamina + permanentStaminaBonus > 10) {
-            permanentStaminaBonus -= 10;
-            sacrificeMade = 1;
-            updateText("Ye sacrificed 10 max stamina.");
-        } else {
-            updateText("Ye dinnae have enough max stamina to sacrifice!");
-        }
-    } else {
-        updateText("Ye chose to back off from the ominous shrine.");
-    }
-    displayText();
-
-    if (!sacrificeMade)
-        return;
-
-    char *upgradeOptions[] = {"Increase Max Health (+10)", "Increase Damage (+3)", "Increase Max Stamina (+10)", "Gain 150 Gold"};
-    showText("Choose your boon...");
-    upgradeSelection = navigateMenu(upgradeOptions, 4);
-
-    if (upgradeSelection == 0) {
-        permanentHealthBonus += 10;
-        updateText("Ye've increased yer max health permanently by 10.");
-    } else if (upgradeSelection == 1) {
-        damageBonus += 3;
-        updateText("Ye've increased yer damage permanently by 3.");
-    } else if (upgradeSelection == 2) {
-        permanentStaminaBonus += 10;
-        updateText("Ye've increased yer max stamina permanently by 10.");
-    } else if (upgradeSelection == 3) {
-        gold += 150;
-        updateText("150 gold spews from the shrine.");
-    } 
-    displayText();
-}
+ void encounterShrine() {
+     char *sacrificeOptions[] = {"Sacrifice Gold (125)", "Sacrifice an Item", "Sacrifice Health", "Sacrifice Stamina", "Return"};
+     int selection, upgradeSelection;
+     showText("Ye stumble upon a mysterious shrine. The air is thick wi' ancient dread.");
+     selection = navigateMenu(sacrificeOptions, 5);
  
-void exploreDungeon() {
-    char *dungeonOptions[] = {"Delve further", "Rest", "Item", "Quit"};
-    int action;
-    while (1) {
-        displayStatus();
-        displayInventory();
-        displayText();
-
-        if (enemiesDefeated == 10) {
-            encounterShop();
-        }
-
-        if (enemiesDefeated >= 10) {
-            encounterEnemy(1);
-        }
-
-        if (rand(20) == 0) {
-            encounterShrine();
-        }
-
-        if (dungeon_floor == 6) {
-            showText("Congratulations! You have cleared all the dungeon floors.");
-            endGame();
-        }
-
-        action = navigateMenu(dungeonOptions, 4);
-        if (action == 3) {
-            is_playing = 1;
-            endGame();
-        }
-
-        if (action == 2) {
-            useItemMenu();
-        }
-
-        steps++;
-        if (action == 1) {
-            regenerateStamina();
-            playerHealth += 5;
-            if (playerHealth > maxHealth + permanentHealthBonus)
-                playerHealth = maxHealth + permanentHealthBonus;
-            if (playerStamina > maxStamina + permanentStaminaBonus)
-                playerStamina = maxStamina + permanentStaminaBonus;
-            updateText("Ye rested, regaining 10 stamina and 5 health.");
-        } else {
-            switch (rand(4)) {
-                case 0:
-                    encounterEnemy(0);
-                    break;
-                case 1:
-                    encounterEnemy(0);
-                    break;
-                case 2:
-                    encounterShop();
-                    break;
-                default:
-                    updateText("Nothing happens.");
-                    break;
-            }
-        }
-        displayText();
-    }
-    reset();
-}
-
-
+     int sacrificeMade = 0;
+ 
+     if (selection == 0) {
+         if (gold >= 125) {
+             gold -= 125;
+             sacrificeMade = 1;
+             updateText("125 gold sacrificed.");
+         } else {
+             updateText("Ye dinnae have enough gold to sacrifice!");
+         }
+     } else if (selection == 1) {
+         if (healthPotions >= 3) {
+             healthPotions -= 3;
+             sacrificeMade = 1;
+             updateText("A set of 2 health potions has been sacrificed.");
+         } else if (staminaPotions >= 5) {
+             staminaPotions -= 5;
+             sacrificeMade = 1;
+             updateText("A set of 4 stamina potions has been sacrificed.");
+         } else if (elixirs >= 1) {
+             elixirs--;
+             sacrificeMade = 1;
+             updateText("An elixir has been sacrificed.");
+         } else {
+             updateText("Ye have no items to sacrifice!");
+         }
+     } else if (selection == 2) {
+         if (maxHealth + permanentHealthBonus > 10) {
+             permanentHealthBonus -= 10;
+             sacrificeMade = 1;
+             updateText("Ye sacrificed 10 max health.");
+         } else {
+             updateText("Ye dinnae have enough max health to sacrifice!");
+         }
+     } else if (selection == 3) {
+         if (maxStamina + permanentStaminaBonus > 10) {
+             permanentStaminaBonus -= 10;
+             sacrificeMade = 1;
+             updateText("Ye sacrificed 10 max stamina.");
+         } else {
+             updateText("Ye dinnae have enough max stamina to sacrifice!");
+         }
+     } else {
+         updateText("Ye chose to back off from the ominous shrine.");
+     }
+     displayText();
+ 
+     if (!sacrificeMade)
+         return;
+ 
+     char *upgradeOptions[] = {"Increase Max Health (+10)", "Increase Damage (+3)", "Increase Max Stamina (+10)", "Gain 150 Gold"};
+     showText("Choose your boon...");
+     upgradeSelection = navigateMenu(upgradeOptions, 4);
+ 
+     if (upgradeSelection == 0) {
+         permanentHealthBonus += 10;
+         updateText("Ye've increased yer max health permanently by 10.");
+     } else if (upgradeSelection == 1) {
+         damageBonus += 3;
+         updateText("Ye've increased yer damage permanently by 3.");
+     } else if (upgradeSelection == 2) {
+         permanentStaminaBonus += 10;
+         updateText("Ye've increased yer max stamina permanently by 10.");
+     } else if (upgradeSelection == 3) {
+         gold += 150;
+         updateText("150 gold spews from the shrine.");
+     } 
+     displayText();
+ }
+ 
+ void exploreDungeon() {
+     char *dungeonOptions[] = {"Delve further", "Rest", "Item", "Quit"};
+     int action;
+     while (1) {
+         displayStatus();
+         displayInventory();
+         displayText();
+ 
+         if (enemiesDefeated == 10) {
+             encounterShop();
+         }
+ 
+         if (enemiesDefeated >= 10) {
+             encounterEnemy(1);
+         }
+ 
+         if (rand() % 20 == 0) {
+             encounterShrine();
+         }
+ 
+         if (dungeon_floor == 6) {
+             showText("Congratulations! You have cleared all the dungeon floors.");
+             endGame();
+         }
+ 
+         action = navigateMenu(dungeonOptions, 4);
+         if (action == 3) {
+             is_playing = 1;
+             endGame();
+         }
+ 
+         if (action == 2) {
+             useItemMenu();
+         }
+ 
+         steps++;
+         if (action == 1) {
+             regenerateStamina();
+             playerHealth += 5;
+             if (playerHealth > maxHealth + permanentHealthBonus)
+                 playerHealth = maxHealth + permanentHealthBonus;
+             if (playerStamina > maxStamina + permanentStaminaBonus)
+                 playerStamina = maxStamina + permanentStaminaBonus;
+             updateText("Ye rested, regaining 10 stamina and 5 health.");
+         } else {
+             switch (rand() % 4) {
+                 case 0:
+                     encounterEnemy(0);
+                     break;
+                 case 1:
+                     encounterEnemy(0);
+                     break;
+                 case 2:
+                     encounterShop();
+                     break;
+                 default:
+                     updateText("Nothing happens.");
+                     break;
+             }
+         }
+         displayText();
+     }
+     reset();
+ }
+ 
     /*
     * startingItem: allows the player to choose a starting item.
     */
-void startingItem() {
+ void startingItem() {
     showText("Pick a starting item...");
     char *startingOptions[] = {"Stamina potion", "Health potion", "Bundle of arrows", "Rest ticket", "Nothing"};
     int selection = navigateMenu(startingOptions, 5);
@@ -1080,8 +1079,8 @@ void startingItem() {
         shopRestLimit++;
     }
     showText("Well, shall we begin?");
-}
-
+ }
+ 
  /*
   * start_dungeon: sets up the game and starts the dungeon exploration loop.
   */

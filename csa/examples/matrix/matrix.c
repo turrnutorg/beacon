@@ -26,8 +26,8 @@ void main(void) {
     for (int i = 0; i < MAX_STREAMS; i++) {
         streams[i].x = sys->rand(WIDTH);
         streams[i].y = sys->rand(HEIGHT);
-        streams[i].speed = 1 + sys->rand(3); // lower is faster
-        streams[i].length = 3 + sys->rand(6);
+        streams[i].speed = 1 + sys->rand() % 3; // lower is faster
+        streams[i].length = 3 + sys->rand() % 6;
         streams[i].counter = 0;
     }
 
@@ -45,7 +45,7 @@ void main(void) {
                 int draw_y = s->y - j;
                 if (draw_y >= 0 && draw_y < HEIGHT) {
                     sys->gotoxy(s->x, draw_y);
-                    char c[2] = { charset[sys->rand(sizeof(charset) - 1)], '\0' };
+                    char c[2] = { charset[sys->rand() % (sizeof(charset) - 1)], '\0' };
 
                     if (j == 0) sys->set_color(15, 0);       // bright white head
                     else if (j == 1) sys->set_color(10, 0);  // neon green trail

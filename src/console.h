@@ -47,8 +47,6 @@ void print_hex(uintptr_t val);
 
 void move_cursor_left();
 
-unsigned int rand(unsigned int max);
-void srand(unsigned int seed);
 int extra_rand();
 
 void gotoxy(size_t x, size_t y);
