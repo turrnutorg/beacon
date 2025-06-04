@@ -30,6 +30,8 @@
  
  // NEW FEATURE: Equipment definitions & battle position
  #define MAX_EQUIP 10
+
+ extern void main_menu_loop(void);
  
  typedef struct {
      int uses;  // remaining uses
@@ -524,7 +526,8 @@
     print(timeBuffer);
     print("\nMade by Xander Gomez (tuvalutortorture)\n\nPress any key to exit...\n");
     getch();
-    reset();
+    main_menu_loop(); // return to main menu
+    dungeon_reset(); // reset game state
 }
 
 

@@ -16,7 +16,6 @@
  #include "time.h"
  #include "csa.h"
  #include "serial.h"
- #include "games.h"
  #include <stdint.h>
  #include <stdarg.h>
  #include <stdbool.h>
@@ -28,7 +27,8 @@
  extern void* g_mb_info;
 
  extern int simas_main(void);
- extern int start_dungeon(void);
+ extern void main_menu_loop(void);
+ extern void cube_main(void);
 
 void reset() {
     start();
@@ -146,11 +146,6 @@ int tries = 0; // number guessing game
          delay_ms(1000);
          shutdown();
  
-    } else if (stricmp(cmd, "dungeon") == 0) {
-        println("Launching the dungeon game...");
-        delay_ms(100);
-        start_dungeon();
- 
     } else if (stricmp(cmd, "program") == 0) {
         if (arg_count == 0) {
             println("Usage: program [load/run]");
@@ -236,13 +231,12 @@ int tries = 0; // number guessing game
         if(arg_count == 0){
             println("Available command categories:");
             println("1 - General commands");
-            println("2 - Music commands");
-            println("3 - Settings commands");
-            println("4 - Games!");
-            println("5 - Test commands");
+            println("2 - Fun commands");
+            println("3 - System commands");
+            println("4 - Test commands");
             println("");
             println("To inspect one category in more detail, use \"help [number]\"");
-            curs_row += 7;
+            curs_row += 6;
             update_cursor();
         } else if (stricmp(args[0], "1") == 0){
             println("Available general commands");
@@ -252,35 +246,31 @@ int tries = 0; // number guessing game
             println("program [load|run|clear] - Load, run, or de-load a program from Serial (COM1).");
             println("simas - Run the SIMAS interpreter.");
             println("help - Display this help message.");
-            println("reboot - Reboot the system.");
-            println("reset - Reset the screen to default.");
-            println("shutdown - Shutdown the system.");
-            curs_row += 10;
+            curs_row += 7;
             update_cursor();
         } else if (stricmp(args[0], "2") == 0){
-            println("Available music commands");
+            println("Available fun commands");
             println("beep - <frequency> <duration> - Beep at a certain frequency and duration.");
             println("melody - <frequency> <duration> | [play/delete/clear/show] - Make a melody!");
-            curs_row += 2;
+            println("games - Launch the game menu.");
+            println("poem - display the Beacon Poem");
+            println("cube - Render a basic 3D cube in the console.");
+            curs_row += 5;
             update_cursor();
         } else if (stricmp(args[0], "3") == 0){
             println("Available settings commands");
             println("settime <hour> <minute> <second> - Set the RTC time.");
             println("setdate <day> <month> <year> - Set the RTC date.");
-            curs_row += 2;
+            println("reboot - Reboot the system.");
+            println("reset - Reset the screen to default.");
+            println("shutdown - Shutdown the system.");
+            curs_row += 5;
             update_cursor();
-        } else if (stricmp(args[0], "4") == 0){
-            println("Available built-in games:");
-            println("dungeon - The Beacon Dungeon Game");
-            println("guessnum - a number guessing game");
-            curs_row += 2;
-            update_cursor();
-        } else if (stricmp(args[0], "5") == 0){
+        } else if (stricmp(args[0], "4") == 0) {
             println("Available test commands");
-            println("macos - no need for ths command... this is not MacOS...");
-            println("poem - display the Beacon Poem");
+            println("macos - this is not macOS... this command is a joke.");
             println("test [argument] - Test command with optional argument.");
-            curs_row += 3;
+            curs_row += 2;
             update_cursor();
         } else {
             println("Usage: help [number]");
@@ -294,7 +284,7 @@ int tries = 0; // number guessing game
              int second = atoi(args[2]);
  
              if (hour < 0 || hour > 23 || minute < 0 || minute > 59 || second < 0 || second > 59) {
-                 println("Invalid time values. Use 24-hour format, dumbass.");
+                 println("Invalid time values. Use 24-hour format, idiot.");
              } else {
                  set_rtc_time((uint8_t)hour, (uint8_t)minute, (uint8_t)second);
                  println("RTC time updated. If it's wrong, that's on you.");
@@ -315,7 +305,10 @@ int tries = 0; // number guessing game
                 println("RTC date updated. If it's wrong, you're the moron who typed it.");
             }
         }
-    } else if (stricmp(cmd, "simas") == 0) {
+    } else if (stricmp(cmd, "cube") == 0) {
+        cube_main();
+    }
+    else if (stricmp(cmd, "simas") == 0) {
         simas_main();
     } else if (stricmp(cmd, "beep") == 0) {
         if (arg_count != 2) {
@@ -347,24 +340,8 @@ int tries = 0; // number guessing game
         } else {
             println("Invalid argument.");
         }
-    }  else if (stricmp(cmd, "guessnum") == 0) {
-        guessnum();
-        answer = rand(101);
-    } else if (answer != -1) {
-        
-        int guess = atoi(cmd);
-        if (guess != answer) {
-            tries ++;
-            if (guess > answer) {
-                println("Too large. Try again.");
-            } else {
-                println("Too small. Try again.");
-            }
-        } else {
-            println("YOU WON THE NUMBER GUESSING GAME!!");
-            tries = 0;
-            answer = -1;
-        }
+    }  else if (stricmp(cmd, "games") == 0) {
+        main_menu_loop();
     } else if (stricmp(cmd, "") == 0) {
         return; // Do nothing if the command is empty
      } else {
