@@ -64,7 +64,7 @@ static void press_any_key_to_continue(void);
 // ───── menu & routing ────────────────────────────────────────────────────────
 void main_menu_loop(void);
 static void run_jeremy_simulator(void);
-static void run_meth_quiz(void);
+static void run_math_quiz(void);
 static void run_guessing_game(void);
 
 /*─────────────────────────────────────────────────────────────────────────────
@@ -129,12 +129,13 @@ static void beep_success(void) {
 // print a colored header at the top of the screen.
 static void print_colored_header(void) {
     gotoxy(0, 0);
-    set_color(11, 0); // light cyan on black
-    print("   ____ _____ _____ ___  ___  _____\n");
-    print("  / __ '/ __ '/ __ '__ \\/ _ \\/ ___/\n");
-    print(" / /_/ / /_/ / / / / / /  __(__  ) \n");
-    print(" \\__, /\\__,_/_/ /_/ /_/\\___/____/  \n");
-    print("/____/                              \n");
+    set_color(2, 0); // light cyan on black
+    print("    ____                                 ______                         \n");
+    print("   / __ )___  ____ __________  ____     / ____/___ _____ ___  ___  _____\n");
+    print("  / __  / _ \\/ __ `/ ___/ __ \\/ __ \\   / / __/ __ `/ __ `__ \\/ _ \\/ ___/\n");
+    print(" / /_/ /  __/ /_/ / /__/ /_/ / / / /  / /_/ / /_/ / / / / / /  __(__  ) \n");
+    print("/_____/\\___/\\__,_/\\___/\\____/_/ /_/   \\____/\\__,_/_/ /_/ /_/\\___/____/  \n");
+    print("                                                                         \n");    
     print("\n");
     set_color(15, 0); // reset to white on black
     print(" welcome to the beacon game collection!\n\n");
@@ -190,7 +191,7 @@ void main_menu_loop(void) {
                 run_jeremy_simulator();
                 break;
             case 2:
-                run_meth_quiz();
+                run_math_quiz();
                 break;
             case 3:
                 run_guessing_game();
@@ -283,7 +284,6 @@ static void run_jeremy_simulator(void) {
 
     clear_and_repaint(15, 0);
     gotoxy(0, 0);
-    read_rtc_datetime(&rtc_start_h, &rtc_start_m, &rtc_start_s, &rtc_start_day, &rtc_start_month, &rtc_start_year);
 
     // reset all state:
     jeremy_health            = 100;
@@ -352,6 +352,7 @@ static void run_jeremy_simulator(void) {
                 clear_and_repaint(15, 0);
 
                 // print old-style status:
+                gotoxy(0, 0);
                 print("jeremy is feeling ");
                 print(moods_str[jeremy_mood]);
                 print(". you have ");
@@ -404,6 +405,7 @@ static void run_jeremy_simulator(void) {
             }
 
             if (hit) {
+                gotoxy(0, 0);
                 switch (action) {
                     case 0: // “nothing”
                         print("you do nothing for a whole hour. wow.\n");
@@ -569,8 +571,13 @@ static void run_jeremy_simulator(void) {
                         break;
 
                     case 10: // “skin”
-                        print("you... you skinned jeremy...\n...\nall hail the flesh rodent\n");
+                        clear_screen();
+                        print("you... you skinned jeremy...\n...");
+                        getch(); // wait for keypress
                         js_set_mood(7);
+                        gotoxy(0, 0);
+                        set_color(0, RED_COLOR);
+                        clear_and_repaint(0, RED_COLOR);
                         break;
 
                     case 11: { // “wait”
@@ -590,6 +597,8 @@ static void run_jeremy_simulator(void) {
                 }
 
                 print("\n");
+                gotoxy(2, 24);
+                getch(); // wait for keypress
                 if (print_msg && !played) {
                     actions_since_last_play++;
                     minute++;
@@ -601,8 +610,7 @@ static void run_jeremy_simulator(void) {
             }
         }
         else if (jeremy_mood == 7 && jeremy_health > 0) {
-            // “skinless” state—jeremy fades
-            print("all hail the flesh rodent\n");
+            print("ALL HAIL THE FLESH RODENT\n");
             jeremy_health -= 5;
             while (getch() < 0) { }
         }
@@ -665,27 +673,7 @@ static void js_process_input(char check, int* hit_out) {
 // when jeremy fades or you quit, show playtime:
 static void js_end_game(void) {
     clear_and_repaint(15, 0);
-    uint8_t rtc_end_h, rtc_end_m, rtc_end_s, rtc_end_day, rtc_end_month, rtc_end_year;
-    read_rtc_datetime(&rtc_end_h, &rtc_end_m, &rtc_end_s, &rtc_end_day, &rtc_end_month, &rtc_end_year);
-
-    int start_total = rtc_start_h * 3600 + rtc_start_m * 60 + rtc_start_s;
-    int end_total   = rtc_end_h   * 3600 + rtc_end_m   * 60 + rtc_end_s;
-    int play_time   = end_total - start_total;
-    if (play_time < 0) {
-        play_time += 24 * 3600; // wrap if midnight passed
-    }
-    int hours   = play_time / 3600;
-    int minutes = (play_time % 3600) / 60;
-    int seconds = play_time % 60;
-
-    print("\n game over! thanks for caring for jeremy.\n\n");
-    print(" total playtime: ");
-    print_padded_two_digits(hours);
-    print(":");
-    print_padded_two_digits(minutes);
-    print(":");
-    print_padded_two_digits(seconds);
-    print("\n\n press any key to return to menu.\n");
+    print("\n jeremy is dead. how dare you.\n\n");
     press_any_key_to_continue();
 }
 
@@ -706,7 +694,7 @@ static char mq_choice_buf[20];
 static char mq_ans_buf[15];
 static const char* mq_operand_str[4] = { "added", "subracted", "multiplied", "divided" };
 
-static void run_meth_quiz(void) {
+static void run_math_quiz(void) {
     clear_and_repaint(15, 0);
     gotoxy(0, 0);
 
@@ -732,7 +720,7 @@ static void run_meth_quiz(void) {
 
     gotoxy(0, 0);
     clear_and_repaint(15, 0);
-    print("\nhow many questions? as many as you want ig (up until 9999, anything more is ignored, greedy ahh)\n");
+    print("\nhow many questions? as many as you want\n");
     gotoxy(0, 24);
     print("> ");
     gotoxy(2, 24);
@@ -779,6 +767,7 @@ static void run_meth_quiz(void) {
         }
 
         // print question:
+        gotoxy(0, 0);
         print("\n");
         print_number(mq_num1);
         print(" ");
@@ -817,6 +806,8 @@ static void run_meth_quiz(void) {
     }
 
     // final score:
+    gotoxy(0, 0);
+    print("\n");
     print("you got ");
     print_number(mq_num_correct);
     print(" out of ");
@@ -856,10 +847,9 @@ static const char* roasts_arr[17] = {
 
 static void run_guessing_game(void) {
     clear_and_repaint(2, 15);
+    set_color(2, 15); // white on black
     gotoxy(0, 0);
-
-    // old dialogue:
-    print("it is guess time.\n");
+    print("welcome to the beacon guessing game.\n");
     print(" choose a difficulty\n");
     print("  1 - easy\n");
     print("  2 - medium\n");
