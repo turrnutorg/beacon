@@ -7,7 +7,10 @@ Beacon is an free, open source 64-bit operating system created by the Turrnut Op
 To build Beacon, you need to either be running Linux, or Windows with WSL (Windows Subsystem for Linux).
 1. If you do not have all dependencies, please run `install-packages.sh` first.
 2. Run `make compile`, and `os.iso` will be in the `out` folder in the current directory.
-3. Burn to bootable USB real hardware (8MB+ RAM, Intel 386, VGA Graphics req'd), or virtualize it using tools such as QEMU or VirtualBox. Example QEMU command: ```qemu-system-x86_64 -cdrom out/os.iso -serial pty```
+3. Burn to bootable media to run on real hardware (Any x86 cpu, at LEAST 16mb of RAM, and VGA Graphics are req'd), or virtualize it using tools such as QEMU or VirtualBox. 
+Example QEMU command: ```qemu-system-x86_64 -cdrom out/os.iso -hda [your image file here] -serial pty```
+
+Note: If a valid Fat32 image file is not attached, you will get a warning on boot, and certain commands may fail.
 
 ### Writing applications
 
