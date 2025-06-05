@@ -30,6 +30,7 @@
  #include "keyboard.h"
  #include "command.h"
  #include "stdlib.h"
+ #include "ff.h"  // For FatFs file system functions
  #include <stdarg.h>
  #include <stdint.h>
  
@@ -731,86 +732,191 @@
  // -------------------- script input / interactive mode --------------------
  
  char script_storage[MAX_SCRIPT_LENGTH];
- 
- void simas_main() {
-     gotoxy(0,0);
-     disable_cursor();
-     clear_screen();
-     print("SIMAS for Beacon; version effective 2.0\n");
-     int script_index = 0;
-     script_storage[0] = '\0';
-     const char *prompt = "simas> ";
-     println("commands: new, write, run, help, exit");
-     
-     while(1) {
-         print(prompt);
-         char line_buffer[1024];
-         simas_read_line(line_buffer, sizeof(line_buffer), prompt);
-         trim(line_buffer);
-         if(strlen(line_buffer) == 0)
-             continue;
-         if(stricmp(line_buffer, "exit") == 0)
-             break;
-         else if(stricmp(line_buffer, "help") == 0) {
-             println("available commands:");
-             println("  new   - clear current script buffer");
-             println("  write - enter multi-line mode to write a program (end with a single dot '.')");
-             println("  run   - run the current script buffer");
-             println("  help  - show this message");
-             println("  exit  - exit interpreter");
-             println("");
-             println("simas instructions supported:");
-             println("  set, print, printc, println, add, sub, mul, div");
-             println("  fun, ret, call, end fun");
-             println("  label, jump, jumpv");
-             println("  eqc, eqv, neqc, neqv, gt, gte, st, ste");
-             println("  and, or, not, conv");
-         }
-         else if(stricmp(line_buffer, "new") == 0) {
-             script_storage[0] = '\0';
-             script_index = 0;
-             print("script buffer cleared.\n");
-         }
-         else if(stricmp(line_buffer, "write") == 0) {
-             println("enter your program. type a single dot (.) on a line to finish:");
-             script_storage[0] = '\0';
-             script_index = 0;
-             while(1) {
-                 print("  > ");
-                 char temp_line[1024];
-                 simas_read_line(temp_line, sizeof(temp_line), "  > ");
-                 trim(temp_line);
-                 if(strcmp(temp_line, ".") == 0)
-                     break;
-                 int len = strlen(temp_line);
-                 if(script_index + len + 2 >= MAX_SCRIPT_LENGTH) {
-                     print("script buffer full, cannot append further.\n");
-                     break;
-                 }
-                 strcat(script_storage, temp_line);
-                 strcat(script_storage, "; ");
-                 script_index += len + 2;
-             }
-             print("multi-line input complete.\n");
-         }
-         else if(stricmp(line_buffer, "run") == 0) {
-             if(strlen(script_storage) == 0)
-                 print("script buffer is empty.\n");
-             else {
-                 char *instrs[MAX_INSTRUCTIONS];
-                 instruction_count = tokenize(script_storage, ';', instrs, MAX_INSTRUCTIONS);
-                 for (int i = 0; i < instruction_count; i++) {
-                     instructions[i] = instrs[i];
-                     trim(instructions[i]);
-                 }
-                 preprocess_instructions();
-                 execute_instructions();
-             }
-         }
-         else {
-             print("unknown command. type 'help' for commands.\n");
-         }
-     }
-     reset();
- }
- 
+
+// -------------------- script saving and loading --------------------
+
+#include "ff.h"  // For FatFs file system functions
+
+// -------------------- script saving and loading --------------------
+
+// Save the current script to a file
+void save_script(const char *filename) {
+    FIL file;
+    FRESULT res = f_open(&file, filename, FA_READ);  // Try opening the file in read mode to check if it exists
+    if (res == FR_OK) {
+        // File exists, prompt user if they want to overwrite
+        print("file already exists. overwrite? (y/n): ");
+        char response[2];
+        simas_read_line(response, sizeof(response), "");
+        trim(response);
+
+        if (stricmp(response, "y") != 0) {
+            print("file not saved.\n");
+            f_close(&file);
+            return;  // Don't save if the user doesn't want to overwrite
+        }
+        f_close(&file);  // Close the file before re-opening it for writing
+    }
+
+    // Open the file for writing (create if it doesn't exist)
+    res = f_open(&file, filename, FA_WRITE | FA_CREATE_ALWAYS);  
+    if (res != FR_OK) {
+        print("error: failed to open file for writing\n");
+        return;
+    }
+
+    // Write the script to the file
+    unsigned int bytes_written;
+    res = f_write(&file, script_storage, strlen(script_storage), &bytes_written);
+    if (res != FR_OK) {
+        print("error: failed to write to file\n");
+    } else {
+        print("script saved successfully.\n");
+    }
+
+    f_close(&file);  // Close the file after writing
+}
+
+// Load a script from a file into the script buffer
+void load_script(const char *filename) {
+    FIL file;
+    FRESULT res = f_open(&file, filename, FA_READ);  // Try to open the file for reading
+    if (res != FR_OK) {
+        // If the file doesn't exist, ask the user if they want to create a new one
+        print("error: file not found.\n");
+        print("Do you want to create a new file? (yes/no): ");
+        
+        char response[4];
+        simas_read_line(response, sizeof(response), "response: ");
+        trim(response);
+        
+        if(stricmp(response, "yes") == 0) {
+            // Create an empty new file
+            save_script(filename);
+        } else {
+            print("file not created.\n");
+        }
+        return;
+    }
+
+    // Read the script from the file
+    unsigned int bytes_read;
+    res = f_read(&file, script_storage, MAX_SCRIPT_LENGTH - 1, &bytes_read);
+    if (res != FR_OK) {
+        print("error: failed to read from file\n");
+    } else {
+        script_storage[bytes_read] = '\0';  // Null-terminate the script
+        print("script loaded successfully.\n");
+    }
+
+    f_close(&file);  // Close the file after reading
+}
+
+// -------------------- script input / interactive mode --------------------
+
+// Main loop with added functionality for saving and loading scripts
+void simas_main() {
+    gotoxy(0,0);
+    disable_cursor();
+    clear_screen();
+    print("SIMAS for Beacon; version effective 2.0\n");
+    int script_index = 0;
+    script_storage[0] = '\0';
+    const char *prompt = "simas> ";
+    println("commands: new, write, run, save, load, help, exit");
+
+    while(1) {
+        print(prompt);
+        char line_buffer[1024];
+        simas_read_line(line_buffer, sizeof(line_buffer), prompt);
+        trim(line_buffer);
+        if(strlen(line_buffer) == 0)
+            continue;
+        if(stricmp(line_buffer, "exit") == 0)
+            break;
+        else if(stricmp(line_buffer, "help") == 0) {
+            println("available commands:");
+            println("  new   - clear current script buffer");
+            println("  write - enter multi-line mode to write a program (end with a single dot '.')");
+            println("  run   - run the current script buffer");
+            println("  save  - save the current script to a file");
+            println("  load  - load a script from a file");
+            println("  help  - show this message");
+            println("  exit  - exit interpreter");
+            println("");
+            println("simas instructions supported:");
+            println("  set, print, printc, println, add, sub, mul, div");
+            println("  fun, ret, call, end fun");
+            println("  label, jump, jumpv");
+            println("  eqc, eqv, neqc, neqv, gt, gte, st, ste");
+            println("  and, or, not, conv");
+        }
+        else if(stricmp(line_buffer, "new") == 0) {
+            script_storage[0] = '\0';
+            script_index = 0;
+            print("script buffer cleared.\n");
+        }
+        else if(stricmp(line_buffer, "write") == 0) {
+            println("enter your program. type a single dot (.) on a line to finish:");
+            script_storage[0] = '\0';
+            script_index = 0;
+            while(1) {
+                print("  > ");
+                char temp_line[1024];
+                simas_read_line(temp_line, sizeof(temp_line), "  > ");
+                trim(temp_line);
+                if(strcmp(temp_line, ".") == 0)
+                    break;
+                int len = strlen(temp_line);
+                if(script_index + len + 2 >= MAX_SCRIPT_LENGTH) {
+                    print("script buffer full, cannot append further.\n");
+                    break;
+                }
+                strcat(script_storage, temp_line);
+                strcat(script_storage, "; ");
+                script_index += len + 2;
+            }
+            print("multi-line input complete.\n");
+        }
+        else if(stricmp(line_buffer, "run") == 0) {
+            if(strlen(script_storage) == 0)
+                print("script buffer is empty.\n");
+            else {
+                char *instrs[MAX_INSTRUCTIONS];
+                instruction_count = tokenize(script_storage, ';', instrs, MAX_INSTRUCTIONS);
+                for (int i = 0; i < instruction_count; i++) {
+                    instructions[i] = instrs[i];
+                    trim(instructions[i]);
+                }
+                preprocess_instructions();
+                execute_instructions();
+            }
+        }
+        else if(stricmp(line_buffer, "save") == 0) {
+            println("enter filename to save the script:");
+            char filename[128];
+            simas_read_line(filename, sizeof(filename), "filename: ");
+            trim(filename);
+            if(strlen(filename) > 0) {
+                save_script(filename);
+            } else {
+                print("invalid filename.\n");
+            }
+        }
+        else if(stricmp(line_buffer, "load") == 0) {
+            println("enter filename to load the script:");
+            char filename[128];
+            simas_read_line(filename, sizeof(filename), "filename: ");
+            trim(filename);
+            if(strlen(filename) > 0) {
+                load_script(filename);
+            } else {
+                print("invalid filename.\n");
+            }
+        }
+        else {
+            print("unknown command. type 'help' for commands.\n");
+        }
+    }
+    reset();
+}

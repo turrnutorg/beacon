@@ -33,6 +33,15 @@ uint8_t inb(uint16_t port) {
     return ret;
 }
 
+uint16_t inw(uint16_t port) {
+    uint16_t result;
+    __asm__ volatile("inw %1, %0" : "=a"(result) : "Nd"(port));
+    return result;
+}
+
+void outw(uint16_t port, uint16_t value) {
+    __asm__ volatile("outw %0, %1" : : "a"(value), "Nd"(port));
+}
 
 void initPort8BitSlow(Port8BitSlow* port, uint16_t port_number) {
     port->port_number = port_number;

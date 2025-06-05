@@ -17,6 +17,10 @@
  #include "csa.h"
  #include "serial.h"
  #include "stdlib.h"
+ #include "math.h"
+ #include "ff.h"
+ #include "disks.h"
+ #include "ctype.h"
  #include <stdint.h>
  #include <stdarg.h>
  #include <stdbool.h>
@@ -346,6 +350,71 @@ int tries = 0; // number guessing game
         }
     }  else if (stricmp(cmd, "games") == 0) {
         main_menu_loop();
+    } else if (stricmp(cmd, "ls") == 0) {
+        if (arg_count == 0) {
+            list_root_directory();  // List files in the root directory
+        } else if (arg_count == 1) {
+            // List a specific directory
+            list_directory_with_paging(args[0]);
+        } else {
+            println("Usage: ls [directory]");
+        }
+    } else if (stricmp(cmd, "format") == 0) {
+        if (arg_count == 0) {
+            println("Are you sure you want to format the disk? This will erase all data (y/n): ");
+            curs_row++;
+            curs_row++;
+            char confirm = getch();  // Wait for user input
+            if (confirm == 'y' || confirm == 'Y') {
+                println("Formatting the disk...");
+                format_disk();  // Call the disk format function
+            } else {
+                println("Disk format aborted.");
+            }
+        } else {
+            println("Usage: format");
+        }
+    } else if (stricmp(cmd, "new") == 0) {
+        if (arg_count != 1) {
+            println("Usage: new <filename>");
+        } else {
+            char filename[INPUT_BUFFER_SIZE];
+            strncpy(filename, args[0], sizeof(filename));
+
+            // Create and write a default content to the file
+            create_and_write_file(filename, "This is a new file created by Beacon OS.\n");
+
+            println("File created successfully.");
+        }
+    } else if (stricmp(cmd, "open") == 0) {
+        if (arg_count != 1) {
+            println("Usage: open <filename>");
+        } else {
+            char filename[INPUT_BUFFER_SIZE];
+            strncpy(filename, args[0], sizeof(filename));
+
+            if (file_exists(filename)) {
+                print("Opening file: ");
+                println(filename);
+                print_file(filename);  // Read and display the file's content
+            } else {
+                println("Error: File not found.");
+            }
+        }
+    } else if (stricmp(cmd, "del") == 0) {
+        if (arg_count != 1) {
+            println("Usage: del <filename>");
+        } else {
+            char filename[INPUT_BUFFER_SIZE];
+            strncpy(filename, args[0], sizeof(filename));
+
+            if (file_exists(filename)) {
+                println("Deleting file...");
+                delete_file(filename);  // Call the delete function
+            } else {
+                println("Error: File not found.");
+            }
+        }
     } else if (stricmp(cmd, "") == 0) {
         return; // Do nothing if the command is empty
      } else {

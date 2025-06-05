@@ -17,6 +17,14 @@
 #include "serial.h"
 #include "csa.h"
 #include <stdint.h>
+#include "ff.h"  // Include FatFs header
+#include "stdlib.h"  // For memory management functions
+#include "disks.h"
+// Declare a FAT file system object and a file object
+FATFS fs;     // File system object
+FIL fil;      // File object
+FRESULT res;  // Result code
+
 extern uint8_t __heap_start;
 extern uint8_t __heap_end;
 
@@ -34,6 +42,8 @@ extern size_t curs_col;
 
 int retain_clock = 1;
 
+int firstboot = 1;  // Flag to indicate if this is the first boot
+
 void reboot() {
     asm volatile ("cli");
     while (inb(0x64) & 0x02);
@@ -42,11 +52,18 @@ void reboot() {
 }
 
 void start() {
-    pit_init_for_polling();
+    if (firstboot) {
+        pit_init_for_polling();
 
-    serial_init();
-    serial_toggle();
-    serial_write_string("serial up n runnin\r\n");
+        serial_init();
+        serial_toggle();
+        serial_write_string("serial up n runnin\r\n");
+
+        // Mount the filesystem after initializing the screen and serial
+        mount_filesystem();
+        curs_row++;
+        firstboot = 0;  // Set firstboot to false after the first run
+    }
     
     set_serial_command(1);
     set_serial_waiting(0);
