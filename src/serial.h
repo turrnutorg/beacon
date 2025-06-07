@@ -1,11 +1,3 @@
-/**
- * Copyright (c) Turrnut Open Source Organization
- * Under the GPL v3 License
- * See COPYING for information on how you can use this file
- * 
- * serial.h
- */
-
 #ifndef SERIAL_H
 #define SERIAL_H
 
@@ -32,20 +24,19 @@ void serial_write(char a);
 // write a null-terminated string to the serial port
 void serial_write_string(const char* str);
 
-// set the flag to enable command processing (nonzero to process commands)
-void set_serial_command(int enabled);
-
-// set the serial waiting flag indicating that some program is waiting on serial input
-void set_serial_waiting(int waiting);
-
-// register a feedthru callback for passing input directly when commands are disabled
-void set_serial_feedthru_callback(serial_feedthru_callback_t callback);
-
 // nonblocking poll function; always polls for serial input and either processes
-// it as a command (if enabled) or passes it straight through
+// it or passes it straight through (depending on the feedthru callback)
 void serial_poll(void);
 
 // toggle the serial port on/off
 void serial_toggle(void);
+
+// Function to start receiving a file via the serial port
+// This function listens for file data, saves the file to FAT32 using FATFS
+void serial_receive_file(const char* filename);
+
+// Function to send a file over the serial port
+// This function reads the file and sends it byte by byte to the serial port
+void serial_send_file(const char* filename);
 
 #endif // SERIAL_H

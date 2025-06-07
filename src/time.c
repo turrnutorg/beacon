@@ -37,6 +37,20 @@
      outb(PIT_CHANNEL0, (divisor >> 8));
  }
  
+// Variable to store the number of PIT ticks
+static uint32_t pit_ticks = 0;
+
+// This function is called in PIT interrupt handler
+// Increment the pit_ticks counter every time the PIT generates a tick (1ms)
+void pit_tick_increment(void) {
+    pit_ticks++;
+}
+
+// Function to get the current time in milliseconds
+uint32_t get_time_ms(void) {
+    return pit_ticks;
+}
+
  int pit_out_high(void) {
      outb(PIT_COMMAND, PIT_READBACK);
      return inb(PIT_CHANNEL0) & 0x80; /* OUT is bit 7 */

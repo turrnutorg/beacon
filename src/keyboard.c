@@ -12,6 +12,7 @@
  #include "console.h"
  #include "string.h"
  #include "command.h"
+ #include "disks.h"
  #include <stdint.h>
  
  char input_buffer[INPUT_BUFFER_SIZE];
@@ -214,46 +215,56 @@
      else if (ascii == '\n') {
          input_buffer[input_len] = '\0';
  
-         println("");
-         process_command(input_buffer);
- 
-         input_len = 0;
-         curs_row++;
-         curs_col = 0;
- 
-         if (curs_row >= NUM_ROWS) {
-             scroll_screen();
-             curs_row = NUM_ROWS - 1;
-         }
- 
-         update_cursor();
+        // newline after enter
+        println("");
+        process_command(input_buffer);
+
+        // reset input
+        input_len = 0;
+
+        if (curs_row >= NUM_ROWS) {
+            scroll_screen();
+            curs_row = NUM_ROWS - 1;
+        }
+
+        // show new prompt here:
+        curs_row++;
+        curs_col = 0;
+        print_prompt(); // ← this draws e.g. "0:/> " and leaves curs_col after it
+
+        update_cursor();
+
      }
  
      // NORMAL CHARACTERS
-     else {
-        if (input_len < INPUT_BUFFER_SIZE - 1) {
-            // shift everything to the right from curs_col
-            for (size_t i = input_len; i > curs_col; i--) {
+// NORMAL CHARACTERS
+    else {
+        if (input_len < INPUT_BUFFER_SIZE - 1 && curs_col >= input_col_offset) {
+            size_t rel_col = curs_col - input_col_offset;
+
+            // shift input buffer to the right from current cursor pos
+            for (size_t i = input_len; i > rel_col; i--) {
                 input_buffer[i] = input_buffer[i - 1];
             }
-    
-            // insert the new char
-            input_buffer[curs_col] = ascii;
+
+            // insert new char
+            input_buffer[rel_col] = ascii;
             input_len++;
             curs_col++;
         }
-    
-        // redraw the whole line so shit stays synced
-        for (size_t i = 0; i < NUM_COLS; i++) {
+
+        // erase from input offset to end of line
+        for (size_t i = input_col_offset; i < NUM_COLS; i++) {
             vga_buffer[curs_row * NUM_COLS + i] = (struct Char){' ', default_color};
         }
-    
+
+        // reprint buffer
         for (size_t i = 0; i < input_len; i++) {
-            vga_buffer[curs_row * NUM_COLS + i] = (struct Char){input_buffer[i], default_color};
+            vga_buffer[curs_row * NUM_COLS + input_col_offset + i] = (struct Char){input_buffer[i], default_color};
         }
-    
+
         update_cursor();
-    }    
+    }
  }
  
     // ----------------------------------------------------------------

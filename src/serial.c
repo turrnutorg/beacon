@@ -1,59 +1,39 @@
-/**
- * Copyright (c) Turrnut Open Source Organization
- * Under the GPL v3 License
- * See COPYING for information on how you can use this file
- * 
- * serial.c
- */
-
 #include "serial.h"
 #include "port.h"
 #include "string.h"
-#include "command.h"
 #include "console.h"
 #include <stddef.h>
 #include <stdint.h>
+#include <stdarg.h>
+#include <stdbool.h>
+#include "stdlib.h"
+#include "time.h"
+#include "ff.h"   // Include FATFS
+#include "diskio.h" // Include Disk I/O for fatfs
+
+#define FILENAME_MAX_LENGTH 64
+
+static FIL file; // FATFS file object for writing received file
+static uint32_t received_file_size = 0;
+static uint32_t received_data_count = 0;
 
 #define SERIAL_INPUT_BUFFER_SIZE 256
 
-// buffer tae store serial input for command processing
+// buffer tae store serial input for file transfer
 static char serial_input_buffer[SERIAL_INPUT_BUFFER_SIZE];
 static int serial_input_index = 0;
 
 #define COM1_PORT 0x3F8
 
-// global flags: set serial_command_enabled to 1 tae process commands,
-// set it tae 0 tae bypass command processing.
-// serial_waiting flag tells the main loop that some program is waiting on serial input.
-static int serial_command_enabled = 1;
-static int serial_waiting = 0;
-static int serial_enabled = 0; // set to 0 to disable serial completely
+// Disable serial command processing
+static int serial_enabled = 1; // Set to 0 to disable serial completely
 
 // pointer for feedthru callback for any waiting process
 typedef void (*serial_feedthru_callback_t)(char);
 static serial_feedthru_callback_t feedthru_callback = NULL;
 
 void serial_toggle() {
-    if (serial_enabled) {
-        println("Serial port disabled.");
-    }
     serial_enabled = !serial_enabled;
-    if (serial_enabled) {
-        println("Serial port enabled.");
-    }
-}
-
-// functions tae set flags and the feedthru callback
-void set_serial_command(int enabled) {
-    serial_command_enabled = enabled;
-}
-
-void set_serial_waiting(int waiting) {
-    serial_waiting = waiting;
-}
-
-void set_serial_feedthru_callback(serial_feedthru_callback_t callback) {
-    feedthru_callback = callback;
 }
 
 void serial_init(void) {
@@ -74,8 +54,6 @@ int serial_received(void) {
 char serial_read(void) {
     if (!serial_enabled) return 0; // don't read if serial is disabled
     if (serial_received())
-        serial_write('\r'); // move to the start of the line
-        serial_write('\n'); // move to the next line
         return inb(COM1_PORT);
     return 0;
 }
@@ -92,50 +70,127 @@ void serial_write(char a) {
 }
 
 void serial_write_string(const char* str) {
-    serial_write('\n'); // move to the next line
     while (*str)
         serial_write(*str++);
 }
 
-// this callback processes serial input as command line input
-void serial_command_handler(char data) {
-    if (data == '\n' || data == '\r') {
-        serial_input_buffer[serial_input_index] = '\0'; // null-terminate
-        if (serial_input_index > 0) {
-            process_command(serial_input_buffer);
-        }
-        serial_input_index = 0;
-        serial_write_string("\r\n> ");
-        return;
-    }
-    if (data == '\b' || data == 127) {
-        if (serial_input_index > 0) {
-            serial_input_index--;
-            serial_write_string("\b \b");
-        }
-        return;
-    }
-    if (serial_input_index < SERIAL_INPUT_BUFFER_SIZE - 1) {
-        serial_write(data);
-        serial_input_buffer[serial_input_index++] = data;
-    }
-}
-
-// call this in yer main loop; it nonblockingly polls for serial input always
+// simplified polling function without command processing
 void serial_poll(void) {
     if (!serial_enabled) return; // don't poll if serial is disabled
     if (serial_received()) {
         char data = inb(COM1_PORT);
         // if some program is waiting or command processing is disabled,
         // pass the byte straight through via feedthru callback if available
-        if (serial_waiting || !serial_command_enabled) {
-            if (feedthru_callback != NULL) {
-                feedthru_callback(data);
-            }
-        } else {
-            // otherwise process it as a command
-            serial_command_handler(data);
+        if (feedthru_callback != NULL) {
+            feedthru_callback(data);
         }
     }
 }
 
+void serial_receive_file(const char* filename) {
+    if (!filename || !*filename) {
+        println("no filename provided.");
+        return;
+    }
+
+    FIL file;
+    if (f_open(&file, filename, FA_WRITE | FA_CREATE_ALWAYS) != FR_OK) {
+        println("couldn't open file for writing.");
+        return;
+    }
+
+    println("waiting for file transfer...");
+    print("receiving: ");
+    println(filename);
+
+    UINT written;
+    uint8_t buffer[128];  // chunked buffer
+    size_t pos = 0;
+    int idle = 0, total = 0;
+    bool got_data = false;
+    const int idle_threshold = 3000;  // ms of silence _after_ first byte
+
+    while (1) {
+        if (serial_received()) {
+            char byte = inb(COM1_PORT);
+            buffer[pos++] = byte;
+            got_data = true;
+            idle = 0;
+            total++;
+
+            if (pos == sizeof(buffer)) {
+                // Write the current buffer to the file
+                FRESULT res = f_write(&file, buffer, pos, &written);
+                if (res != FR_OK || written != pos) {
+                    println("Error writing to file. Transfer aborted.");
+                    f_close(&file);
+                    return;
+                }
+                pos = 0;  // reset buffer position
+                serial_write('.');  // progress marker
+            }
+        } else {
+            delay_ms(1);
+            if (got_data) {
+                idle++;
+                if (idle > idle_threshold) {
+                    // If there's any remaining data, write it
+                    if (pos > 0) {
+                        FRESULT res = f_write(&file, buffer, pos, &written);
+                        if (res != FR_OK || written != pos) {
+                            println("Error writing last chunk to file. Transfer aborted.");
+                            f_close(&file);
+                            return;
+                        }
+                    }
+                    println("\ntransfer complete.");
+                    break;
+                }
+            }
+        }
+    }
+
+    f_close(&file);
+
+    char msg[128];
+    snprintf(msg, sizeof(msg), "saved: %s (%d bytes)\n", filename, total);
+    println(msg);
+}
+
+void serial_send_file(const char* filename) {
+    if (!filename || !*filename) {
+        println("no filename provided.");
+        return;
+    }
+
+    FIL file;
+    if (f_open(&file, filename, FA_READ) != FR_OK) {
+        println("failed to open file.");
+        return;
+    }
+
+    println("sending file...");
+    print("sending: ");
+    println(filename);
+
+    uint8_t buffer[128];
+    UINT read;
+    int total = 0;
+
+    while (1) {
+        if (f_read(&file, buffer, sizeof(buffer), &read) != FR_OK || read == 0)
+            break;
+
+        for (UINT i = 0; i < read; i++)
+            serial_write(buffer[i]);
+
+        total += read;
+        serial_write('.');  // progress blip
+    }
+
+    f_close(&file);
+
+    char msg[128];
+    snprintf(msg, sizeof(msg), "\ndone sending %s (%d bytes)\n", filename, total);
+    serial_write_string(msg);
+}

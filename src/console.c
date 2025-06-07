@@ -76,8 +76,6 @@ void printc(char character)
     };
 
     col++;  // Move to the next column
-
-    serial_write(character);  // Send the character to the serial port
 }
 
 void print(const char *str)
@@ -93,7 +91,6 @@ void println(const char *str)
     print(str);
     newline();  // Move to a new line after printing
     update_cursor();
-    serial_write('\n');  // Send newline to serial port
 }
 
 void print_hex(uintptr_t val) {

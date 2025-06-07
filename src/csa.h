@@ -107,9 +107,6 @@ typedef struct syscall_table {
     int     (*serial_is_transmit_empty)(void);
     void    (*serial_write)(char);
     void    (*serial_write_string)(const char*);
-    void    (*set_serial_command)(int);
-    void    (*set_serial_waiting)(int);
-    void    (*set_serial_feedthru_callback)(serial_feedthru_callback_t callback);
     void    (*serial_poll)(void);
     void    (*serial_toggle)(void);
 

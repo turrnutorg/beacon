@@ -100,9 +100,6 @@ syscall_table_t syscall_table = {
     .serial_is_transmit_empty      = serial_is_transmit_empty,
     .serial_write                  = serial_write,
     .serial_write_string           = serial_write_string,
-    .set_serial_command            = set_serial_command,
-    .set_serial_waiting            = set_serial_waiting,
-    .set_serial_feedthru_callback  = set_serial_feedthru_callback,
     .serial_poll                   = serial_poll,
     .serial_toggle                 = serial_toggle,
 
@@ -162,7 +159,6 @@ syscall_table_t syscall_table = {
     .isinff                        = isinff
 };
 
-
 #define CSA_MAGIC 0xC0DEFACE
 #define CSA_HEADER_SIZE 12
 #define CSA_MAX_SIZE 65536
@@ -181,8 +177,6 @@ void csa_feedthru(char byte) {
     if (csa_recv_index >= sizeof(csa_buffer)) {
         println("CSA: Buffer overflow. You absolute donkey.");
         csa_failed = 1;
-        set_serial_waiting(0);
-        set_serial_command(1);
         return;
     }
 
@@ -193,8 +187,6 @@ void csa_feedthru(char byte) {
         if (magic != CSA_MAGIC) {
             println("CSA: Invalid header magic. Get fucked.");
             csa_failed = 1;
-            set_serial_waiting(0);
-            set_serial_command(1);
             return;
         }
 
@@ -204,16 +196,12 @@ void csa_feedthru(char byte) {
         if (size > CSA_MAX_SIZE) {
             println("CSA: Payload too fuckin big. Die.");
             csa_failed = 1;
-            set_serial_waiting(0);
-            set_serial_command(1);
             return;
         }
 
         if (addr < 0x200000 || addr > 0x800000) { // adjust these as per your memory map
             println("CSA: Invalid memory address, get tae fuck.");
             csa_failed = 1;
-            set_serial_waiting(0);
-            set_serial_command(1);
             return;
         }
 
@@ -223,8 +211,6 @@ void csa_feedthru(char byte) {
 
     if (csa_expected_size > 0 && csa_recv_index == CSA_HEADER_SIZE + csa_expected_size) {
         csa_done = 1;
-        set_serial_waiting(0);
-        set_serial_command(1);
     }
 }
 
@@ -242,14 +228,22 @@ void csa_tick(void) {
 
         csa_done = 0;
         csa_recv_index = 0;
-        curs_row ++;
+        curs_row++;
         curs_col = 0;
         update_cursor();
-        println("CSA: Ready to execute. Type 'program run' to start.");
+        println("CSA: Ready to execute.");
         curs_row++;
         update_cursor();
         execute_csa();
     }
+}
+
+void execute_csa(void) {
+    println("JUMPING TO ENTRYPOINT NOW");
+    void (*entry_func)(void) = (void (*)(void))csa_entrypoint;
+    entry_func();
+    println("CSA: ERROR! Payload returned... what the fuck?");
+    reset(); // or enter an infinite halt loop
 }
 
 void command_load(char* args) {
@@ -261,16 +255,4 @@ void command_load(char* args) {
     csa_entrypoint = 0;
     csa_done = 0;
     csa_failed = 0;
-
-    set_serial_command(0);
-    set_serial_waiting(1);
-    set_serial_feedthru_callback(csa_feedthru);
-}
-
-void execute_csa(void) {
-    println("JUMPING TO ENTRYPOINT NOW");
-    void (*entry_func)(void) = (void (*)(void))csa_entrypoint;
-    entry_func();
-    println("CSA: ERROR! Payload returned... what the fuck?");
-    reset(); // or enter an infinite halt loop
 }
