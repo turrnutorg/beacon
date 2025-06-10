@@ -94,6 +94,10 @@ void start() {
 
     input_len = 0;
     
+    beep(440, 1000);
+    beep(2, 400);
+    beep(440, 1000);
+
     println("Copyright (c) 2025 Turrnut Open Source Organization.");
     println("");
     display_datetime();

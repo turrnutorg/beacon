@@ -96,11 +96,12 @@ void get_full_path(const char *path, char *out_path) {
         snprintf(out_path, MAX_PATH_LEN, "%s/%s", temp, sub);
     }
 
-maybe_add_slash:
-    size_t len = strlen(out_path);
-    if (len < MAX_PATH_LEN - 1 && out_path[len - 1] != '/') {
-        out_path[len] = '/';
-        out_path[len + 1] = '\0';
+    maybe_add_slash:{
+        size_t len = strlen(out_path);
+        if (len < MAX_PATH_LEN - 1 && out_path[len - 1] != '/') {
+            out_path[len] = '/';
+            out_path[len + 1] = '\0';
+        }
     }
 }
 

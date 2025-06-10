@@ -117,7 +117,7 @@ void render_frame(float yaw,float pitch){
     // cull+draw textured faces
     Vec3 cam_to = {0,0,0};
     for(int f=0;f<6;++f){
-        int *F=cube_faces[f];
+        const int *F=cube_faces[f];
         Vec3 A=world[F[0]], B=world[F[1]], C=world[F[2]], D=world[F[3]];
         Vec3 norm = cross(subtract(B,A), subtract(C,A));
         // vector from face to cam = cam(0,0,0) - A
