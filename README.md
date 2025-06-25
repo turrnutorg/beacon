@@ -1,6 +1,6 @@
 # Beacon
 ![Beacon](images/BeaconBanner.png)
-Beacon is an free, open source 64-bit operating system created by the Turrnut Open Source Organization. The OS source code is distributed under the [GPL v3 License](COPYING).
+Beacon is an free, open source operating system created and maintained by the Turrnut Open Source Organization. The OS source code is distributed under the [GPL v3 License](COPYING).
 
 ### How to build & run
 
