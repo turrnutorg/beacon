@@ -10,13 +10,15 @@ To build Beacon, you need to either be running Linux, or Windows with WSL (Windo
 3. Burn to bootable media to run on real hardware (Any x86 cpu, at LEAST 16mb of RAM, and VGA Graphics are req'd; IDE HDD reccomended), or virtualize it using tools such as QEMU or VirtualBox. 
 Example QEMU command: ```qemu-system-i386 -cdrom out/os.iso -hda [your image file here] -boot d -serial pty```
 
-Note: If a valid FAT32 image file / Hard Disk is not attached, the OS may not boot.
+> [!IMPORTANT]
+> If a valid FAT32 image file / Hard Disk is not attached, the OS may not boot.
 
-Hard Disks are officially supported on real hw, but experimental, so when it comes to your data, here be dragons.
+> [!NOTE]
+> Hard Disks are officially supported on real hardware, but experimental, so when it comes to your data, here be dragons.
 
 ### Writing applications
 
-Please see ./CSA for more information on how to create an application.
+Please see [./csa](./csa) for more information on how to create an application.
 
 ### Screenshots
 ![Starting Screen of BeaconOS](images/StartingScreen.png)
