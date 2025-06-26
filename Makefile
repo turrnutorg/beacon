@@ -2,7 +2,7 @@ gccparams = -m32 -nostdlib -fno-builtin -fno-exceptions -fno-leading-underscore 
 asmparams = --32
 ldparams = -melf_i386 -s
 
-objs = obj/boot.o obj/os.o obj/console.o obj/keyboard.o obj/keyboard_asm.o obj/port.o obj/screen.o obj/command.o obj/speaker.o obj/string.o obj/time.o obj/serial.o obj/csa.o obj/simas.o obj/dungeon.o obj/math.o obj/games.o obj/cube.o obj/paint.o obj/stdlib.o obj/ctype.o obj/ff.o obj/diskio.o obj/disks.o obj/turrlogo.o
+objs = obj/bf.o obj/boot.o obj/os.o obj/console.o obj/keyboard.o obj/keyboard_asm.o obj/port.o obj/screen.o obj/command.o obj/speaker.o obj/string.o obj/time.o obj/serial.o obj/csa.o obj/simas.o obj/dungeon.o obj/math.o obj/games.o obj/cube.o obj/paint.o obj/stdlib.o obj/ctype.o obj/ff.o obj/diskio.o obj/disks.o obj/turrlogo.o
 
 compile:
 	rm -rf out
@@ -13,6 +13,7 @@ compile:
 	as $(asmparams) -o obj/boot.o src/boot.asm
 	as $(asmparams) -o obj/keyboard_asm.o src/keyboard.asm
 
+	gcc $(gccparams) -o obj/bf.o -c src/bf.c
 	gcc $(gccparams) -o obj/console.o -c src/console.c
 	gcc $(gccparams) -o obj/port.o -c src/port.c
 	gcc $(gccparams) -o obj/keyboard.o -c src/keyboard.c

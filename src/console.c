@@ -55,6 +55,7 @@ void newline()
     scroll_screen();  // Scroll the screen if we're at the last row
 }
 
+/* Print a character*/
 void printc(char character)
 {
     if (character == '\n')
@@ -78,6 +79,7 @@ void printc(char character)
     col++;  // Move to the next column
 }
 
+/* Print a string */
 void print(const char *str)
 {
     for (size_t i = 0; str[i] != '\0'; i++)
@@ -86,6 +88,7 @@ void print(const char *str)
     }
 }
 
+/* Print a string and a new line */
 void println(const char *str)
 {
     print(str);

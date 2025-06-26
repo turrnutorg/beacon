@@ -6,24 +6,26 @@
  * command.c
  */
 
+#include "bf.h"
 #include "command.h"
 #include "console.h"
-#include "screen.h"
-#include "os.h"
-#include "keyboard.h"
-#include "string.h"
-#include "speaker.h"
-#include "time.h"
 #include "csa.h"
-#include "serial.h"
-#include "stdlib.h"
-#include "math.h"
-#include "ff.h"
-#include "disks.h"
 #include "ctype.h"
-#include <stdint.h>
+#include "disks.h"
+#include "ff.h"
+#include "keyboard.h"
+#include "math.h"
+#include "os.h"
+#include "screen.h"
+#include "serial.h"
+#include "speaker.h"
+#include "stdlib.h"
+#include "string.h"
+#include "time.h"
+
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 // external vars from os.c or other modules
 extern size_t curs_row;
@@ -241,13 +243,14 @@ void process_command(const char* command) {
         } else if (stricmp(args[0], "2") == 0) {
             println("Available fun commands:");
             println("Beep <freq> <dur> - Beep at frequency (Hz) and duration (ms).");
+            println("Bf <code> - The programming language of Brainfu-, I mean, boyfriend.");
             println("Melody - Create or play a melody.");
             println("Games - Launch the game menu.");
             println("Poem - Display the Beacon poem.");
             println("Cube - Render a basic 3D cube in the console.");
             println("Paint - Open Turrpaint.");
             println("macOS - This is not macOS. This command is pointless.");
-            curs_row += 7;
+            curs_row += 8;
             update_cursor();
         } else if (stricmp(args[0], "3") == 0) {
             println("Available system commands:");
@@ -336,6 +339,15 @@ void process_command(const char* command) {
             }
         }
 
+    } else if (stricmp(cmd, "bf") == 0) {
+        char combined_args[INPUT_BUFFER_SIZE * MAX_ARGS] = {0};
+        for (int i = 0; i < arg_count; i++) {
+            strcat(combined_args, args[i]);
+            if (i < arg_count - 1) {
+                strcat(combined_args, " ");
+            }
+        }
+        bf(combined_args);
     } else if (stricmp(cmd, "games") == 0) {
         main_menu_loop();
 
@@ -654,7 +666,7 @@ void process_command(const char* command) {
 
     // Advance cursor, scroll if needed
     if (stricmp(cmd, "") != 0) {
-    curs_row++;
+        curs_row++;
     }
     if (curs_row >= NUM_ROWS) {
         scroll_screen();

@@ -10,6 +10,7 @@
 #define CSA_H
 
 #include <stdint.h>
+#include "time.h"
 #include "math.h"
 
 // public interface
