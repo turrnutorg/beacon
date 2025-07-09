@@ -18,6 +18,7 @@
  char input_buffer[INPUT_BUFFER_SIZE];
  size_t input_len = 0;
  int shift = 0;  // fixed this garbage
+ int display_prompt = 1;
 
  static int shift_count = 0;
  
@@ -227,13 +228,13 @@
             curs_row = NUM_ROWS - 1;
         }
 
-        // show new prompt here:
-        curs_row++;
-        curs_col = 0;
-        print_prompt(); // ← this draws e.g. "0:/> " and leaves curs_col after it
+        if (display_prompt) {
+            curs_row++;
+            curs_col = 0;
+            print_prompt(); // ← this draws e.g. "0:/> " and leaves curs_col after it
 
-        update_cursor();
-
+            update_cursor();
+        }
      }
  
      // NORMAL CHARACTERS

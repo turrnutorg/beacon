@@ -33,6 +33,8 @@ extern size_t curs_col; // Ensure this is size_t
 
 extern int is_scrolling;
 
+extern char block[2];
+
 // Screen-related functions
 void enable_cursor(uint8_t cursor_start, uint8_t cursor_end);
 void disable_cursor();
@@ -40,5 +42,6 @@ void update_cursor();
 void scroll_screen();
 void putchar(char c);
 void enable_bright_bg();
+void drawTile(const unsigned char *tile, int x, int y, int width, int height, int bg_color);
 
 #endif // SCREEN_H

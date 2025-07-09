@@ -17,6 +17,8 @@
  #include <stdint.h>
  #include <stddef.h>
  
+ extern int display_prompt;
+
  // ---------------------------------
  // Buffer sizes
  // ---------------------------------

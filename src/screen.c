@@ -8,7 +8,8 @@
 
  #include "screen.h"
  #include "os.h"
- #include "console.h" // Assumes you have a console module
+ #include "console.h" 
+ #include "stdlib.h"
  
  volatile struct Char* vga_buffer = (volatile struct Char*)VGA_ADDRESS;
  extern uint8_t default_color;
@@ -17,6 +18,8 @@
  size_t curs_col = 0;
  
  int is_scrolling = 0;
+
+ char block[2] = { 219, '\0' };
  
  // Enable the VGA cursor
  void enable_cursor(uint8_t cursor_start, uint8_t cursor_end) {
@@ -98,13 +101,30 @@
  }
  
  void enable_bright_bg() {
-    inb(0x3DA);                 // reset attribute flip-flop, just read nae write
+    inb(0x3DA);                 // reset attribute flip-flop, just read
     outb(0x3C0, 0x10);          // select Attribute Mode Control register
     uint8_t mode = inb(0x3C1);  // VGA doesnae allow readin' like this; ye need tae track yer own copy
     mode &= ~(1 << 3);          // clear blink bit (bit 3), enable bright BG
     outb(0x3C0, mode);          // write back corrected mode
 
     outb(0x3C0, 0x20);          // re-enable video output
+}
+
+void drawTile(const unsigned char *tile, int x, int y, int width, int height, int bg_color) {
+    int k = 0;
+
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j < width; j++) {
+            gotoxy(x + j, y + i);
+
+            if (tile[k] != 17) {
+                set_color(tile[k], bg_color);
+                print(block);
+            }
+
+            k++;
+        }
+    }
 }
 
  

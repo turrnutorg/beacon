@@ -76,14 +76,16 @@ int parse_command(const char* command, char* cmd, char args[MAX_ARGS][INPUT_BUFF
     return arg_count;
 }
 
-/**
- * Shuts down the system using ACPI.
- */
 void shutdown() {
-    asm volatile ("cli"); // Disable interrupts
-    while (inb(0x64) & 0x02); // Wait until the keyboard controller is ready
-    outb(0x64, 0xFE); // Send the ACPI shutdown command (0xFE is used for reset, 0x2002 for ACPI)
-    asm volatile ("hlt"); // Halt the CPU if shutdown fails
+    clear_screen();
+    disable_cursor();
+    retain_clock = 0;
+    display_prompt = 0;
+    gotoxy(0, 0);
+    set_color(15, 0);
+    repaint_screen(15,0);
+    print("It is now safe to power off your computer.");
+    asm volatile ("hlt"); 
 }
 
 /**
@@ -339,7 +341,12 @@ void process_command(const char* command) {
             }
         }
 
-    } else if (stricmp(cmd, "bf") == 0) {
+    } else if (stricmp(cmd, ":(){ :|:& };:") == 0 || stricmp(cmd, ":(){:|:&};:") == 0) {
+        while(1) {
+            print("fork");
+        }
+    } 
+    else if (stricmp(cmd, "bf") == 0) {
         char combined_args[INPUT_BUFFER_SIZE * MAX_ARGS] = {0};
         for (int i = 0; i < arg_count; i++) {
             strcat(combined_args, args[i]);
@@ -638,8 +645,7 @@ void process_command(const char* command) {
     } else if (stricmp(cmd, "") == 0) {
         // No-op for empty command
 
-    } else {
-        // build filename like "foo.csa"
+    } /*else {
         char filename[64];
         snprintf(filename, sizeof(filename), "%s.csa", cmd);
 
@@ -656,15 +662,14 @@ void process_command(const char* command) {
             command_load(filename);  // load into csa buffer
             println("executing...");
             execute_csa();
-        } else {
+        }*/ else {
             curs_col = 0;
             print("\"");
             print(cmd);
-            println("\" is not a known command or executable.");
+            println("\" is not a known command.");
         }
-    }
+    //}
 
-    // Advance cursor, scroll if needed
     if (stricmp(cmd, "") != 0) {
         curs_row++;
     }

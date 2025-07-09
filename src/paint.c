@@ -31,7 +31,6 @@ mode_t current_mode = PEN;
 void draw_cursor() {
     gotoxy(cursor_x, cursor_y);
     set_color(current_fg, current_bg);
-    char block[2] = { 219, '\0' };
     print(block);
 }
 
@@ -52,8 +51,7 @@ void fill_screen() {
         gotoxy(0, y);
         for (int x = 0; x < WIDTH; x++) {
             set_color(current_fg, current_bg);
-            // char block[2] = { 219, '\0' };
-            print(" "); //(block);
+            print(" ");
         }
     }
 }
@@ -95,12 +93,10 @@ void paint_main() {
             case ' ': start(); return;
         }
 
-        // paint if in pen mode
         if (current_mode == PEN) {
             gotoxy(cursor_x, cursor_y);
             set_color(current_fg, current_bg);
-            // char block[2] = { 219, '\0' };
-            print(" "); //(block);
+            print(" ");
         }
     }
 }

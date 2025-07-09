@@ -2,7 +2,7 @@ gccparams = -m32 -nostdlib -fno-builtin -fno-exceptions -fno-leading-underscore 
 asmparams = --32
 ldparams = -melf_i386 -s
 
-objs = obj/bf.o obj/boot.o obj/os.o obj/console.o obj/keyboard.o obj/keyboard_asm.o obj/port.o obj/screen.o obj/command.o obj/speaker.o obj/string.o obj/time.o obj/serial.o obj/csa.o obj/simas.o obj/dungeon.o obj/math.o obj/games.o obj/cube.o obj/paint.o obj/stdlib.o obj/ctype.o obj/ff.o obj/diskio.o obj/disks.o obj/turrlogo.o
+objs = obj/bf.o obj/boot.o obj/os.o obj/console.o obj/keyboard.o obj/keyboard_asm.o obj/port.o obj/screen.o obj/command.o obj/speaker.o obj/string.o obj/time.o obj/serial.o obj/csa.o obj/simas.o obj/dungeon.o obj/math.o obj/games.o obj/cube.o obj/paint.o obj/stdlib.o obj/ctype.o obj/ff.o obj/diskio.o obj/disks.o
 
 compile:
 	rm -rf out
@@ -36,8 +36,10 @@ compile:
 	gcc $(gccparams) -o obj/ff.o -c src/ff.c
 	gcc $(gccparams) -o obj/diskio.o -c src/diskio.c
 	gcc $(gccparams) -o obj/disks.o -c src/disks.c
-	gcc $(gccparams) -o obj/turrlogo.o -c src/turrlogo.c
 
 	ld $(ldparams) -T link.ld -o out/os.bin $(objs)
 	cp out/os.bin build/boot/os.bin
 	grub-mkrescue --output=out/os.iso build
+
+run: compile
+	qemu-system-i386 -cdrom out/os.iso -boot d -serial pty
