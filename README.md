@@ -11,15 +11,11 @@ To build Beacon, you need to either be running Linux, or Windows with WSL (Windo
 Example QEMU command: ```qemu-system-i386 -cdrom out/os.iso -hda [your image file here] -boot d -serial pty```
 
 > [!IMPORTANT]
-> If a valid FAT32 image file / Hard Disk is not attached, the OS may not boot.
+> If a valid FAT32 image file / Hard Disk is not attached, the OS may not boot or throw an error. The drive must also be IDE/PATA, it cannot be SATA/AHCI.
 > It is also reccomended to use a burned CD/DVD, rather than a USB flash drive if attempting to boot on real hardware.
 
 > [!NOTE]
 > Hard Disks are officially supported on real hardware, but experimental. Your data may be lost, and we are not liable for any lost data caused by Beacon.
-
-### Writing applications
-
-Please see [./csa](./csa) for more information on how to create an application.
 
 ### Screenshots
 ![Starting Screen of BeaconOS](images/StartingScreen.png)

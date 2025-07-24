@@ -30,8 +30,6 @@ char*  strncat(char* dest, const char* src, size_t max);
 int    strcmp(const char* s1, const char* s2);
 int    strncmp(const char* s1, const char* s2, size_t n);
 int    stricmp(const char* a, const char* b);  // non-standard but yer using it anyway
-int    strcasecmp(const char* a, const char* b);
-int    strncasecmp(const char* a, const char* b, size_t n);
 
 char*  strchr(const char* str, int c);
 char*  strrchr(const char* str, int c);

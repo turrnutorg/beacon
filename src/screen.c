@@ -45,7 +45,6 @@
  }
  
  void scroll_screen() {
-     retain_clock = 0;  // Stop the clock while scrolling
      is_scrolling = 1;  // Set scrolling flag
      // If cursor is at or past the last row, move it to the second-to-last row
      if (curs_row >= NUM_ROWS - 1) {
@@ -127,4 +126,14 @@ void drawTile(const unsigned char *tile, int x, int y, int width, int height, in
     }
 }
 
+void set_palette_color(unsigned char index, unsigned char rgb_val) {
+    inb(0x3DA);
+    outb(0x3C0, (index & 0x1F) | 0x20);
+    outb(0x3C0, rgb_val);
+    inb(0x3DA);
+}
+
+unsigned char ega_color(unsigned char r, unsigned char g, unsigned char b) {
+    return ((r & 0x03) << 4) | ((g & 0x03) << 2) | (b & 0x03);
+}
  

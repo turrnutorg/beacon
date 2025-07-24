@@ -6,10 +6,8 @@
  * command.c
  */
 
-#include "bf.h"
 #include "command.h"
 #include "console.h"
-#include "csa.h"
 #include "ctype.h"
 #include "disks.h"
 #include "ff.h"
@@ -17,7 +15,6 @@
 #include "math.h"
 #include "os.h"
 #include "screen.h"
-#include "serial.h"
 #include "speaker.h"
 #include "stdlib.h"
 #include "string.h"
@@ -31,10 +28,10 @@
 extern size_t curs_row;
 extern size_t curs_col;
 extern void* g_mb_info;
-extern int simas_main(void);
 extern void main_menu_loop(void);
 extern void cube_main(void);
 extern void paint_main(void);
+extern void bf(char input[]);
 int macos = 0; // macos mode
 
 void reset() {
@@ -79,7 +76,6 @@ int parse_command(const char* command, char* cmd, char args[MAX_ARGS][INPUT_BUFF
 void shutdown() {
     clear_screen();
     disable_cursor();
-    retain_clock = 0;
     display_prompt = 0;
     gotoxy(0, 0);
     set_color(15, 0);
@@ -130,7 +126,6 @@ void process_command(const char* command) {
 
     } else if (stricmp(cmd, "clear") == 0) {
         clear_screen();
-        retain_clock = 0;
         gotoxy(0, 0);
         println("");
         println("");
@@ -150,21 +145,6 @@ void process_command(const char* command) {
         delay_ms(1000);
         shutdown();
 
-    } else if (stricmp(cmd, "program") == 0) {
-        if (arg_count == 0) {
-            println("Usage: program [load/run]");
-        } else if (stricmp(args[0], "load") == 0) {
-            command_load(NULL);
-        } else if (stricmp(args[0], "run") == 0) {
-            if (csa_entrypoint == NULL) {
-                println("Error: No program loaded, ya fuckin goblin.");
-            } else {
-                println("Executing loaded program...");
-                execute_csa();
-            }
-        } else {
-            println("Invalid argument. Use 'load' or 'run', ya eejit.");
-        }
     } else if (stricmp(cmd, "color") == 0) {
         if (arg_count != 2) {
             println("Usage: color <text color> <background color>");
@@ -185,7 +165,6 @@ void process_command(const char* command) {
         melody_main();
 
     } else if (stricmp(cmd, "poem") == 0) {
-        retain_clock = 0;
         clear_screen();
         gotoxy(0, 0);
         println("life is like a door");
@@ -227,7 +206,7 @@ void process_command(const char* command) {
             println("1 - General commands");
             println("2 - Fun commands");
             println("3 - System commands");
-            println("4 - File commands");
+            println("4 - File / Disk commands");
             println("");
             println("To inspect one category in more detail, use \"help [number]\"");
             curs_row += 6;
@@ -236,16 +215,15 @@ void process_command(const char* command) {
             println("Available general commands:");
             println("Clear - Clear the screen (does not clear visual effects).");
             println("Color <text color> <background color> - Change text and background colors.");
+            println("Palette <index 0-15> <r 0-3> <g 0-3> <b 0-3> - Change a color's values.");
             println("Echo <repetitions> <\"text\"> - Echo the text back to the console.");
-            println("Program [load|run] - Load or run a program from serial (COM1).");
-            println("SIMAS - Run the SIMAS interpreter.");
             println("Help - Display this help message.");
-            curs_row += 6;
+            curs_row += 5;
             update_cursor();
         } else if (stricmp(args[0], "2") == 0) {
             println("Available fun commands:");
             println("Beep <freq> <dur> - Beep at frequency (Hz) and duration (ms).");
-            println("Bf <code> - The programming language of Brainfu-, I mean, boyfriend.");
+            println("BF <code> - The programming language of Brainfu-, I mean, boyfriend.");
             println("Melody - Create or play a melody.");
             println("Games - Launch the game menu.");
             println("Poem - Display the Beacon poem.");
@@ -258,16 +236,15 @@ void process_command(const char* command) {
             println("Available system commands:");
             println("Settime <hour> <min> <sec> - Set the RTC time.");
             println("Setdate <day> <month> <year> - Set the RTC date.");
+            println("Time - Show the current Date & Time.");
             println("Reboot - Reboot the system.");
             println("Reset - Reset the screen to default.");
             println("Shutdown - Shutdown the system.");
-            println("Drives - List mounted drives.");
-            println("CD <dir> - Change directory (supports drive letters).");
-            println("DU [drive] - Disk usage for current or specified drive.");
-            curs_row += 8;
+            curs_row += 6;
             update_cursor();
         } else if (stricmp(args[0], "4") == 0) {
-            println("Available file commands:");
+            println("Available file / disk commands:");
+            println("Drives - List mounted drives.");
             println("Ls [directory] - List files in cwd or specified dir.");
             println("Lsr [directory] - List files recursively.");
             println("Mkdir <directory> - Create a new directory.");
@@ -279,10 +256,10 @@ void process_command(const char* command) {
             println("Open <filename> - Open a file for reading.");
             println("Del <filename> - Delete a file.");
             println("Rename <oldname> <newname> - Rename a file.");
-            println("File [send|receive] <filename> - Send/receive over serial.");
             println("Format [drive] - Format a drive (warning: destroys data).");
-            println("Du [drive] - Disk usage (alias for 'Du').");
-            curs_row += 11;
+            println("CD <dir> - Change directory.");
+            println("DU [drive] - Disk usage (no drive specified will list all drives).");
+            curs_row += 12;
             update_cursor();
         } else {
             println("Usage: help [1-4]");
@@ -317,17 +294,13 @@ void process_command(const char* command) {
                 println("RTC date updated.");
             }
         }
-
     } else if (stricmp(cmd, "cube") == 0) {
         cube_main();
-
     } else if (stricmp(cmd, "paint") == 0) {
         paint_main();
-
-    } else if (stricmp(cmd, "simas") == 0) {
-        simas_main();
-
-    } else if (stricmp(cmd, "beep") == 0) {
+    } else if (stricmp(cmd, "time") == 0) {
+        display_datetime();
+    }  else if (stricmp(cmd, "beep") == 0) {
         if (arg_count != 2) {
             println("Usage: beep <freq> <dur>");
         } else {
@@ -338,6 +311,22 @@ void process_command(const char* command) {
             } else {
                 println("Beepin'...");
                 beep(freq, duration);
+            }
+        }
+
+    } else if (stricmp(cmd, "palette") == 0) {
+        if (arg_count != 4) {
+            println("Usage: palette <index 0-15> <r 0-3> <g 0-3> <b 0-3>");
+        } else {
+            int palette_index = atoi(args[0]);
+            int palette_red = atoi(args[1]);
+            int palette_green = atoi(args[2]);
+            int palette_blue = atoi(args[3]);
+            if (palette_red < 0 || palette_red > 3 || palette_blue < 0 || palette_blue > 3 || palette_green < 0 || palette_green > 3) {
+                println("Invalid colour values.");
+            } else {
+                set_palette_color(palette_index, ega_color(palette_red, palette_blue, palette_green));
+                println("Colours updated.");
             }
         }
 
@@ -560,25 +549,6 @@ void process_command(const char* command) {
             }
         }
 
-    } else if (stricmp(cmd, "file") == 0) {
-        if (arg_count == 0) {
-            println("Usage: file [send|receive] <filename>");
-        } else if (stricmp(args[0], "send") == 0) {
-            if (arg_count != 2) {
-                println("Usage: file send <filename>");
-            } else {
-                serial_send_file(args[1]);
-            }
-        } else if (stricmp(args[0], "receive") == 0) {
-            if (arg_count != 2) {
-                println("Usage: file receive <filename>");
-            } else {
-                serial_receive_file(args[1]);
-            }
-        } else {
-            println("Invalid argument for 'file'. Use 'send' or 'receive'.");
-        }
-
     } else if (stricmp(cmd, "cd") == 0) {
         if (arg_count != 1) {
             println("Usage: cd <directory|drive:>");
@@ -645,24 +615,7 @@ void process_command(const char* command) {
     } else if (stricmp(cmd, "") == 0) {
         // No-op for empty command
 
-    } /*else {
-        char filename[64];
-        snprintf(filename, sizeof(filename), "%s.csa", cmd);
-
-        FIL fil;
-        FRESULT res = f_open(&fil, filename, FA_READ);
-        if (res == FR_OK) {
-            f_close(&fil);
-
-            // try load it as CSA
-            print("found ");
-            print(filename);
-            println(", loading...");
-
-            command_load(filename);  // load into csa buffer
-            println("executing...");
-            execute_csa();
-        }*/ else {
+    } else {
             curs_col = 0;
             print("\"");
             print(cmd);

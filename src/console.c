@@ -10,7 +10,6 @@
 #include "screen.h"
 #include "port.h"
 #include "time.h"
-#include "serial.h"
 #include "string.h"
 
 // Define col and row in this file

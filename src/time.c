@@ -145,7 +145,7 @@ uint32_t get_time_ms(void) {
      strcat(datetime_str, day_str);
      strcat(datetime_str, ", ");
      strcat(datetime_str, year_str);
-     strcat(datetime_str, ". ");
+     strcat(datetime_str, ", at ");
      strcat(datetime_str, hour_str);
      strcat(datetime_str, ":");
      strcat(datetime_str, min_str);
@@ -154,12 +154,7 @@ uint32_t get_time_ms(void) {
      strcat(datetime_str, " ");
      strcat(datetime_str, am_pm);
  
-     int row = 1, col = 0;
-     int offset = row * 80 + col;
-     for (int i = 0; datetime_str[i] != '\0'; i++) {
-         vga_buffer[offset + i].character = datetime_str[i];
-         vga_buffer[offset + i].color = default_color;
-     }
+    printf("Today is %s.\n", datetime_str);
  }
  
  void set_rtc_time(uint8_t hour, uint8_t minute, uint8_t second) {

@@ -9,6 +9,7 @@
  */
 
  #include "string.h"
+ #include "ctype.h"
  #include <stddef.h>  /* for size_t */
  #include <stdlib.h>  /* for malloc/free in strdup */
  #include <stdarg.h>  /* not strictly needed here */
@@ -154,38 +155,6 @@
     }
     return (unsigned char)*a - (unsigned char)*b;
 }
- 
- static char to_lower(char c) {
-     if (c >= 'A' && c <= 'Z') {
-         return (char)(c + 32);
-     }
-     return c;
- }
- 
- int strcasecmp(const char* a, const char* b) {
-     while (*a && *b) {
-         char ca = to_lower(*a++);
-         char cb = to_lower(*b++);
-         if (ca != cb) {
-             return (int)(unsigned char)ca - (int)(unsigned char)cb;
-         }
-     }
-     return (int)(unsigned char)to_lower(*a) - (int)(unsigned char)to_lower(*b);
- }
- 
- int strncasecmp(const char* a, const char* b, size_t n) {
-     for (size_t i = 0; i < n; i++) {
-         char ca = to_lower(a[i]);
-         char cb = to_lower(b[i]);
-         if (ca != cb) {
-             return (int)(unsigned char)ca - (int)(unsigned char)cb;
-         }
-         if (ca == '\0') {
-             return 0;
-         }
-     }
-     return 0;
- }
  
  char* strchr(const char* str, int c) {
      char ch = (char)c;

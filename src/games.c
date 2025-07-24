@@ -52,7 +52,6 @@
  /*─────────────────────────────────────────────────────────────────────────────
    1) GLOBALS & FORWARD DECLARATIONS
  ─────────────────────────────────────────────────────────────────────────────*/
- extern void start_dungeon(void);
  // ───── shared helpers ───────────────────────────────────────────────────────
  static void read_line(char* buffer, size_t maxlen);
  static int  parse_int(const char* buf);
@@ -176,8 +175,6 @@
          set_color(12, 0);  print("  3");     // red “3”
          set_color(15, 0);  print(". guessing game\n");
          set_color(12, 0);  print("  4");     // red “4”
-         set_color(15, 0);  print(". dungeon\n");
-         set_color(12, 0);  print("  5");     // red “5”
          set_color(15, 0);  print(". quit to os\n\n");
          // move prompt to bottom row (assumes 25 rows, index 24)
          gotoxy(0, 24);
@@ -198,10 +195,6 @@
                  run_guessing_game();
                  break;
              case 4:
-                 clear_and_repaint(2, 15); // green on black
-                 start_dungeon();
-                 break;
-             case 5:
                  clear_screen();
                  print(" thanks for playing—returning to os\n");
                  delay_ms(500);

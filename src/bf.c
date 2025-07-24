@@ -6,7 +6,6 @@
  * bf.c
  */
 
-#include "bf.h"
 #include "console.h"
 #include "keyboard.h"
 #include "screen.h"

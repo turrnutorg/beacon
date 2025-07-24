@@ -14,8 +14,6 @@
 #include "string.h"
 #include "speaker.h"
 #include "time.h"
-#include "serial.h"
-#include "csa.h"
 #include <stdint.h>
 #include "ff.h"  // Include FatFs header
 #include "stdlib.h"  // For memory management functions
@@ -41,10 +39,6 @@ extern size_t input_len;
 extern size_t curs_row;
 extern size_t curs_col;
 
-extern void print_turrnut_logo();  // Forward declaration for logo printing
-
-int retain_clock = 1;
-
 int firstboot = 1;  // Flag to indicate if this is the first boot
 
 // resets the os thru keyboard controller
@@ -54,7 +48,6 @@ void reboot() {
     outb(0x64, 0xFE);
     asm volatile ("hlt");
 }
-
 
 // write in your own custom logo, or use this one :)
 static unsigned char logo[16][28] = {
@@ -92,14 +85,24 @@ void start() {
         gotoxy(0, 2);
 
         set_color(15, 0);
-        println("Initializing serial (COM1)...");
-        serial_init();
-        serial_toggle();
 
         // Mount all file systems and initialize cwd for each drive
         println("Mounting file systems...");
         mount_all_filesystems();
         curs_row++;
+
+        // this is here to let the user know that the OS, is, in fact, working and not frozen
+        clear_screen();
+        set_color(GREEN_COLOR, WHITE_COLOR);
+        repaint_screen(GREEN_COLOR, WHITE_COLOR);
+
+        print("*boot jingle*");
+
+        gotoxy(0, 0);
+        
+        beep(440, 1000);
+        beep(2, 400);
+        beep(440, 1000);
 
         firstboot = 0;
     }
@@ -109,28 +112,16 @@ void start() {
     repaint_screen(GREEN_COLOR, WHITE_COLOR);
 
     enable_cursor(0, 15);
-
-    col = 0;
-    row = 0;
-    retain_clock = 1;
-
-    input_len = 0;
-    // this is here to let the user know that the OS, is, in fact, working and not frozen
-    print("*boot jingle*");
     
-    beep(440, 1000);
-    beep(2, 400);
-    beep(440, 1000);
+    input_len = 0;
 
     col = 0;
     row = 0;
 
     println("Copyright (c) 2025 Turrnut Open Source Organization.");
-    println("");
-    display_datetime();
     println("Type a command (type 'help' for a list):");
 
-    curs_row = 3;
+    curs_row = 2;
 
     input_col_offset = 0;
     print_prompt();
@@ -145,17 +136,6 @@ void start() {
         if (buffer_get(&scancode)) {
             handle_keypress(scancode);
         }
-
-        if (retain_clock == 1) {
-            loop_counter++;
-            if (loop_counter >= 50000) {
-                display_datetime();
-                loop_counter = 0;
-            }
-        }
-
-        serial_poll();
-        csa_tick();  // Call CSA tick handler
     }
 }
 
