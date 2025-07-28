@@ -109,7 +109,7 @@
     outb(0x3C0, 0x20);          // re-enable video output
 }
 
-void drawTile(const unsigned char *tile, int x, int y, int width, int height, int bg_color) {
+void drawTile(unsigned char *tile, int x, int y, int width, int height, int bg_color) {
     int k = 0;
 
     for (int i = 0; i < height; i++) {

@@ -15,12 +15,15 @@
 #define INPUT_BUFFER_SIZE 256
 #define MAX_ARGS 10
 
+extern int command_line;
+
 // Function Declarations
 
 void shutdown();
 
 int parse_command(const char* command, char* cmd, char args[MAX_ARGS][INPUT_BUFFER_SIZE]);
 void process_command(const char* command);
+void command_shell_loop(void);
 
 void reset();
 

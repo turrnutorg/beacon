@@ -14,6 +14,8 @@
  #include "command.h"
  #include "disks.h"
  #include <stdint.h>
+
+ int accept_key_presses = 1;
  
  char input_buffer[INPUT_BUFFER_SIZE];
  size_t input_len = 0;
@@ -28,6 +30,26 @@
  extern volatile size_t buffer_tail;
  
  volatile uint8_t key_states[128] = {0}; // tracks if a key is currently pressed
+
+ #define SCANQ_SIZE 16
+static volatile uint8_t scan_queue[SCANQ_SIZE];
+static volatile size_t scan_head = 0;
+static volatile size_t scan_tail = 0;
+
+static void scan_enqueue(uint8_t sc) {
+    size_t next = (scan_head + 1) % SCANQ_SIZE;
+    if (next != scan_tail) {
+        scan_queue[scan_head] = sc;
+        scan_head = next;
+    }
+}
+
+static int scan_dequeue(uint8_t* sc) {
+    if (scan_head == scan_tail) return 0;
+    *sc = scan_queue[scan_tail];
+    scan_tail = (scan_tail + 1) % SCANQ_SIZE;
+    return 1;
+}
  
  // ----------------------------------------------------------------
  // Add a scancode to the buffer (optional, since asm does it)
@@ -140,170 +162,93 @@
  // ----------------------------------------------------------------
  // Handles an individual key press event
  // ----------------------------------------------------------------
- void handle_keypress(uint8_t scancode) {
-    // process shift key events even if they're release events
-    if (scancode == 0x2A || scancode == 0x36 ||
-        scancode == (0x2A | 0x80) || scancode == (0x36 | 0x80)) {
-        scancode_to_ascii(scancode);
+void handle_keypress(uint8_t scancode) {
+    // shift key events
+    if (scancode == 0x2A || scancode == 0x36) {
+        if (!key_states[scancode]) {
+            key_states[scancode] = 1;
+            shift_count++;
+            shift = 1;
+        }
         return;
     }
 
-    // for all other keys, if it's a release, clear state and return
-    if (scancode & 0x80) { 
+    if (scancode == (0x2A | 0x80) || scancode == (0x36 | 0x80)) {
+        key_states[scancode & 0x7F] = 0;
+        if (shift_count > 0) shift_count--;
+        if (shift_count == 0) shift = 0;
+        return;
+    }
+
+    if (scancode & 0x80) {
         key_states[scancode & 0x7F] = 0;
         return;
     }
 
-    // if key already pressed, ignore repeat presses
-    if (key_states[scancode]) {
-        return; // already handled this keypress
-    }
+    if (key_states[scancode]) return;
     key_states[scancode] = 1;
-    
-    // process key press
+
     char ascii = capitalize_if_shift(scancode_to_ascii(scancode));
-    if (!ascii) return; // not a printable character
- 
-     // BACKSPACE HANDLING
-     if (ascii == '\b') {
-             if (input_len > 0) {
-                 input_len--;
- 
-                 if (curs_col == 0 && curs_row > 0) {
-                     curs_row--;
-                     curs_col = NUM_COLS - 1;
-                 } else {
-                     curs_col--;
-                 }
- 
-                 for (size_t i = curs_col; i < input_len; i++) {
-                     input_buffer[i] = input_buffer[i + 1];
-                 }
- 
-                 input_buffer[input_len] = '\0';
- 
-                 size_t screen_index = curs_row * NUM_COLS + curs_col;
-                 for (size_t i = screen_index; i < (NUM_ROWS * NUM_COLS) - 1; i++) {
-                     vga_buffer[i] = vga_buffer[i + 1];
-                 }
- 
-                 vga_buffer[NUM_ROWS * NUM_COLS - 1] = (struct Char){' ', default_color};
- 
-                 update_cursor();
-             }
-     }
+    if (!ascii) return;
 
-     else if (ascii == UP_ARROW || ascii == DOWN_ARROW) {
-         // UP and DOWN arrows are ignored in this context
-         return;
-     }
- 
-     else if (ascii == LEFT_ARROW) {
-         if (curs_col > 0) {
-             curs_col--;
-             update_cursor();
-         }
-     }
- 
-     else if (ascii == RIGHT_ARROW) {
-         if (curs_col < input_len) {
-             curs_col++;
-             update_cursor();
-         }
-     }
- 
-     // NEWLINE (ENTER)
-     else if (ascii == '\n') {
-         input_buffer[input_len] = '\0';
- 
-        // newline after enter
-        println("");
-        process_command(input_buffer);
+    // add to input buffer
+    if (input_len < INPUT_BUFFER_SIZE - 1) {
+        input_buffer[input_len++] = ascii;
+        input_buffer[input_len] = '\0';
+    }
 
-        // reset input
-        input_len = 0;
-
-        if (curs_row >= NUM_ROWS) {
-            scroll_screen();
-            curs_row = NUM_ROWS - 1;
-        }
-
-        if (display_prompt) {
-            curs_row++;
+    // display printable characters only
+    if (ascii >= 32 && ascii <= 126) {
+        vga_buffer[curs_row * NUM_COLS + curs_col] = (struct Char){ascii, default_color};
+        curs_col++;
+        if (curs_col >= NUM_COLS) {
             curs_col = 0;
-            print_prompt(); // ← this draws e.g. "0:/> " and leaves curs_col after it
-
-            update_cursor();
-        }
-     }
- 
-     // NORMAL CHARACTERS
-// NORMAL CHARACTERS
-    else {
-        if (input_len < INPUT_BUFFER_SIZE - 1 && curs_col >= input_col_offset) {
-            size_t rel_col = curs_col - input_col_offset;
-
-            // shift input buffer to the right from current cursor pos
-            for (size_t i = input_len; i > rel_col; i--) {
-                input_buffer[i] = input_buffer[i - 1];
+            curs_row++;
+            if (curs_row >= NUM_ROWS) {
+                scroll_screen();
+                curs_row = NUM_ROWS - 1;
             }
-
-            // insert new char
-            input_buffer[rel_col] = ascii;
-            input_len++;
-            curs_col++;
         }
-
-        // erase from input offset to end of line
-        for (size_t i = input_col_offset; i < NUM_COLS; i++) {
-            vga_buffer[curs_row * NUM_COLS + i] = (struct Char){' ', default_color};
-        }
-
-        // reprint buffer
-        for (size_t i = 0; i < input_len; i++) {
-            vga_buffer[curs_row * NUM_COLS + input_col_offset + i] = (struct Char){input_buffer[i], default_color};
-        }
-
         update_cursor();
     }
- }
+
+    // ignore arrows, enter, backspace, etc.
+    // they're still buffered — app decides what to do
+}
  
     // ----------------------------------------------------------------
     // Get a character from the keyboard buffer (blocking)
     // ----------------------------------------------------------------
 
-    int getch() {
-        uint8_t scancode = 0;
-        int code;
-    
-        while (1) {
-            if (buffer_get(&scancode)) {
-                code = capitalize_if_shift(scancode_to_ascii(scancode));
-    
-                // return ALL valid codes including arrows
-                if (code != 0) {
-                    return code;
-                }
-            }
-        }
-    }
+int getch() {
+    accept_key_presses = 1;
+    uint8_t scancode = 0;
+    int code;
 
-    // ----------------------------------------------------------------
-    // Get a character from the keyboard buffer (non-blocking)
-    // Returns -1 if no input
-    // ----------------------------------------------------------------
-    int getch_nb() {
-        uint8_t scancode = 0;
-        int code;
-
-        if (buffer_get(&scancode)) {
+    while (1) {
+        if (scan_dequeue(&scancode)) {
             code = capitalize_if_shift(scancode_to_ascii(scancode));
-            if (code != 0) {
-                return code;
-            }
+            if (code != 0) return code;
         }
+    }
+}
 
-        return -1;
+int getch_nb() {
+    accept_key_presses = 1;
+    uint8_t scancode = 0;
+    int code;
+
+    if (scan_dequeue(&scancode)) {
+        code = capitalize_if_shift(scancode_to_ascii(scancode));
+        if (code != 0) return code;
     }
 
-    
+    return -1;
+}
+
+ void irq_keyboard_handler_c(uint8_t scancode) {
+    if (accept_key_presses) {
+        scan_enqueue(scancode);
+        handle_keypress(scancode);
+    }
+}

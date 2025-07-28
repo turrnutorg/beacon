@@ -42,7 +42,7 @@ void update_cursor();
 void scroll_screen();
 void putchar(char c);
 void enable_bright_bg();
-void drawTile(const unsigned char *tile, int x, int y, int width, int height, int bg_color);
+void drawTile(unsigned char *tile, int x, int y, int width, int height, int bg_color);
 void set_palette_color(unsigned char index, unsigned char rgb_val);
 unsigned char ega_color(unsigned char r, unsigned char g, unsigned char b);
 

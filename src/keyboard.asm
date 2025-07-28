@@ -8,6 +8,7 @@
 .section .text
 .global keyboard_handler
 .global get_key
+.extern irq_keyboard_handler_c
 
 .comm key_buffer, 16, 4
 .comm buffer_head, 4, 4
@@ -19,22 +20,15 @@ keyboard_handler:
     pusha
 
     inb $0x60, %al
-    leal key_buffer, %edi
-    mov buffer_head, %ebx
-    add %ebx, %edi
-    movb %al, (%edi)
-
-    inc %ebx
-    and $0x0F, %ebx          # wrap around (16 entries)
-    mov %ebx, buffer_head
+    push %eax
+    call irq_keyboard_handler_c
+    add $4, %esp
 
     popa
-    movb $0x20, %al          # EOI to master PIC
+    movb $0x20, %al
     outb %al, $0x20
-
     sti
     iret
-
 
 .skip_handler:
     popa

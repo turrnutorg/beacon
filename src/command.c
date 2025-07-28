@@ -34,10 +34,6 @@ extern void paint_main(void);
 extern void bf(char input[]);
 int macos = 0; // macos mode
 
-void reset() {
-    start();
-}
-
 /**
  * Parses the input command into the base command and its arguments.
  */
@@ -161,9 +157,6 @@ void process_command(const char* command) {
             }
         }
 
-    } else if (stricmp(cmd, "melody") == 0) {
-        melody_main();
-
     } else if (stricmp(cmd, "poem") == 0) {
         clear_screen();
         gotoxy(0, 0);
@@ -224,13 +217,12 @@ void process_command(const char* command) {
             println("Available fun commands:");
             println("Beep <freq> <dur> - Beep at frequency (Hz) and duration (ms).");
             println("BF <code> - The programming language of Brainfu-, I mean, boyfriend.");
-            println("Melody - Create or play a melody.");
             println("Games - Launch the game menu.");
             println("Poem - Display the Beacon poem.");
             println("Cube - Render a basic 3D cube in the console.");
             println("Paint - Open Turrpaint.");
             println("macOS - This is not macOS. This command is pointless.");
-            curs_row += 8;
+            curs_row += 7;
             update_cursor();
         } else if (stricmp(args[0], "3") == 0) {
             println("Available system commands:");
@@ -630,4 +622,121 @@ void process_command(const char* command) {
         scroll_screen();
         curs_row = NUM_ROWS - 1;
     }
+}
+
+#define CMD_INPUT_BUFFER INPUT_BUFFER_SIZE
+static char cmd_input[CMD_INPUT_BUFFER];
+static size_t cmd_len = 0;
+static size_t cmd_cursor = 0;
+int command_line = 0;
+
+void command_shell_loop() {
+    memset(cmd_input, 0, CMD_INPUT_BUFFER);
+    cmd_len = 0;
+    cmd_cursor = 0;
+    accept_key_presses = 1;
+    command_line = 1;
+
+    clear_screen();
+    set_color(GREEN_COLOR, WHITE_COLOR);
+    repaint_screen(GREEN_COLOR, WHITE_COLOR);
+
+    enable_cursor(0, 15);
+    
+    input_len = 0;
+
+    col = 0;
+    row = 0;
+
+    println("Copyright (c) 2025 Turrnut Open Source Organization.");
+    println("Type a command (type 'help' for a list):");
+
+    curs_row = 2;
+
+    input_col_offset = 0;
+    print_prompt();
+
+    update_cursor();
+
+   while (command_line) {
+        int key = getch(); // blocking
+
+        if (key == '\n') {
+            println("");
+            cmd_input[cmd_len] = '\0';
+
+            if (cmd_len > 0) {
+                process_command(cmd_input);
+            }
+
+            memset(cmd_input, 0, CMD_INPUT_BUFFER);
+            cmd_len = 0;
+            cmd_cursor = 0;
+
+            input_col_offset = print_prompt();
+            update_cursor();
+        }
+
+        else if (key == '\b') {
+            if (cmd_cursor > 0) {
+                // shift input left
+                for (size_t i = cmd_cursor - 1; i < cmd_len - 1; i++) {
+                    cmd_input[i] = cmd_input[i + 1];
+                }
+
+                cmd_len--;
+                cmd_cursor--;
+
+                for (size_t i = cmd_cursor; i <= cmd_len; i++) {
+                    char ch = (i < cmd_len) ? cmd_input[i] : ' ';
+                    vga_buffer[curs_row * NUM_COLS + input_col_offset + i] = (struct Char){ch, default_color};
+                }
+
+                curs_col = input_col_offset + cmd_cursor;
+                update_cursor();
+            }
+        }
+
+        else if (key == LEFT_ARROW) {
+            if (cmd_cursor > 0) {
+                cmd_cursor--;
+                curs_col = input_col_offset + cmd_cursor;
+                update_cursor();
+            }
+        }
+
+        else if (key == RIGHT_ARROW) {
+            if (cmd_cursor < cmd_len) {
+                cmd_cursor++;
+                curs_col = input_col_offset + cmd_cursor;
+                update_cursor();
+            }
+        }
+
+        else if (key >= 32 && key <= 126) {
+            if (cmd_len < CMD_INPUT_BUFFER - 1) {
+                // shift input right
+                for (size_t i = cmd_len; i > cmd_cursor; i--) {
+                    cmd_input[i] = cmd_input[i - 1];
+                }
+
+                cmd_input[cmd_cursor] = key;
+                cmd_len++;
+                cmd_cursor++;
+
+                for (size_t i = cmd_cursor - 1; i < cmd_len; i++) {
+                    vga_buffer[curs_row * NUM_COLS + input_col_offset + i] = (struct Char){cmd_input[i], default_color};
+                }
+
+                curs_col = input_col_offset + cmd_cursor;
+                update_cursor();
+            }
+        }
+
+        // ignore up/down for now
+    }
+}
+
+void reset() {
+    command_shell_loop();
 }

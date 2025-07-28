@@ -11,6 +11,5 @@
 #include <stdint.h>
 
 void beep(uint32_t frequency, uint32_t ms);
-int melody_main(void);
 
 #endif // BEEP_H

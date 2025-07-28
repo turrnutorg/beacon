@@ -40,8 +40,6 @@ char*  strpbrk(const char* str, const char* accept);
 
 char*  strtok(char* str, const char* delim);
 
-char*  strdup(const char* s);  /* POSIX extension */
-
 /* --- integer→string conversions --- */
 void itoa(int value, char* str);
 void itoa_base(int value, char* str, int base);

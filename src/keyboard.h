@@ -18,6 +18,7 @@
  #include <stddef.h>
  
  extern int display_prompt;
+ extern int accept_key_presses;
 
  // ---------------------------------
  // Buffer sizes
