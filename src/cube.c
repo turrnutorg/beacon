@@ -188,7 +188,7 @@ void cube_main(void) {
             case DOWN_ARROW:  pitch += speed; break;
             case '-':         speed -= 0.01f; if(speed < 0.01f) speed = 0.01f; break;
             case '=': case '+': speed += 0.01f; break;
-            case 'q': case 'Q': start(); break;
+            case 'q': case 'Q': reset(); break;
             default: break;
         }        
         render_frame(yaw,pitch);

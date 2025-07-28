@@ -447,11 +447,6 @@ void mount_all_filesystems(void) {
             println("");
         }
     }
-
-    if (!mounted_any) {
-        println("No available hard drives found. Press any key to continue.");
-        getch();
-    }
 }
 
 //------------------------------------------------------------

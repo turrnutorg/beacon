@@ -49,25 +49,11 @@
      }
  }
  
- /*─────────────────────────────────────────────────────────────────────────────
-   1) GLOBALS & FORWARD DECLARATIONS
- ─────────────────────────────────────────────────────────────────────────────*/
- // ───── shared helpers ───────────────────────────────────────────────────────
  static void read_line(char* buffer, size_t maxlen);
  static int  parse_int(const char* buf);
  static void clear_and_repaint(uint8_t fg, uint8_t bg);
  static void press_any_key_to_continue(void);
- 
- // ───── menu & routing ────────────────────────────────────────────────────────
- void main_menu_loop(void);
- static void run_jeremy_simulator(void);
- static void run_math_quiz(void);
- static void run_guessing_game(void);
- 
- /*─────────────────────────────────────────────────────────────────────────────
-   2) SHARED I/O AND COLOR HELPERS
- ─────────────────────────────────────────────────────────────────────────────*/
- 
+
  // reads up to (maxlen-1) characters into buffer, stopping on '\n'. always
  // null-terminates. echoes input and handles basic backspace.
  static void read_line(char* buffer, size_t maxlen) {
@@ -119,73 +105,6 @@
      print("\n press any key to return to menu...\n");
      getch();
  }
- 
- /*─────────────────────────────────────────────────────────────────────────────
-   3) MAIN MENU LOOP
- ─────────────────────────────────────────────────────────────────────────────*/
- 
- void main_menu_loop(void) {
-     clear_screen();
-     char choice_buf[16];
- 
-     for (;;) {
-         clear_and_repaint(15, 0);
-        gotoxy(0, 0);
-        set_color(2, 0); // light cyan on black
-        print("    ____                                 ______                         \n");
-        print("   / __ )___  ____ __________  ____     / ____/___ _____ ___  ___  _____\n");
-        print("  / __  / _ \\/ __ `/ ___/ __ \\/ __ \\   / / __/ __ `/ __ `__ \\/ _ \\/ ___/\n");
-        print(" / /_/ /  __/ /_/ / /__/ /_/ / / / /  / /_/ / /_/ / / / / / /  __(__  ) \n");
-        print("/_____/\\___/\\__,_/\\___/\\____/_/ /_/   \\____/\\__,_/_/ /_/ /_/\\___/____/  \n");
-        print("                                                                         \n");    
-        print("\n");
-        set_color(15, 0); // reset to white on black
-        print(" welcome to the beacon game collection!\n\n");
-         // print menu options
-         set_color(12, 0);  print("  1");     // red “1”
-         set_color(15, 0);  print(". jeremy simulator\n");
-         set_color(12, 0);  print("  2");     // red “2”
-         set_color(15, 0);  print(". math quiz\n");
-         set_color(12, 0);  print("  3");     // red “3”
-         set_color(15, 0);  print(". guessing game\n");
-         set_color(12, 0);  print("  4");     // red “4”
-         set_color(15, 0);  print(". quit to os\n\n");
-         // move prompt to bottom row (assumes 25 rows, index 24)
-         gotoxy(0, 24);
-         set_color(15, 0);
-         print("> ");
-         gotoxy(2, 24);
-         read_line(choice_buf, sizeof(choice_buf));
-         int choice = parse_int(choice_buf);
- 
-         switch (choice) {
-             case 1:
-                 run_jeremy_simulator();
-                 break;
-             case 2:
-                 run_math_quiz();
-                 break;
-             case 3:
-                 run_guessing_game();
-                 break;
-             case 4:
-                 clear_screen();
-                 print(" thanks for playing—returning to os\n");
-                 delay_ms(500);
-                 reset();
-                 return; // not reached
-             default:
-                 beep(400, 70);
-                 print("\n invalid choice. press any key.\n");
-                 while (getch() < 0) { }
-                 break;
-         }
-     }
- }
- 
- /*─────────────────────────────────────────────────────────────────────────────
-   4) JEREMY SIMULATOR (mini-game #1)
- ─────────────────────────────────────────────────────────────────────────────*/
  
  // internal state for jeremy simulator:
  static int  jeremy_health             = 100;
@@ -895,3 +814,61 @@
      }
  }
  
+ void main_menu_loop(void) {
+     clear_screen();
+     char choice_buf[16];
+ 
+     for (;;) {
+         clear_and_repaint(15, 0);
+        gotoxy(0, 0);
+        set_color(2, 0); // light cyan on black
+        print("    ____                                 ______                         \n");
+        print("   / __ )___  ____ __________  ____     / ____/___ _____ ___  ___  _____\n");
+        print("  / __  / _ \\/ __ `/ ___/ __ \\/ __ \\   / / __/ __ `/ __ `__ \\/ _ \\/ ___/\n");
+        print(" / /_/ /  __/ /_/ / /__/ /_/ / / / /  / /_/ / /_/ / / / / / /  __(__  ) \n");
+        print("/_____/\\___/\\__,_/\\___/\\____/_/ /_/   \\____/\\__,_/_/ /_/ /_/\\___/____/  \n");
+        print("                                                                         \n");    
+        print("\n");
+        set_color(15, 0); // reset to white on black
+        print(" welcome to the beacon game collection!\n\n");
+         // print menu options
+         set_color(12, 0);  print("  1");     // red “1”
+         set_color(15, 0);  print(". jeremy simulator\n");
+         set_color(12, 0);  print("  2");     // red “2”
+         set_color(15, 0);  print(". math quiz\n");
+         set_color(12, 0);  print("  3");     // red “3”
+         set_color(15, 0);  print(". guessing game\n");
+         set_color(12, 0);  print("  4");     // red “4”
+         set_color(15, 0);  print(". quit to os\n\n");
+         // move prompt to bottom row (assumes 25 rows, index 24)
+         gotoxy(0, 24);
+         set_color(15, 0);
+         print("> ");
+         gotoxy(2, 24);
+         read_line(choice_buf, sizeof(choice_buf));
+         int choice = parse_int(choice_buf);
+ 
+         switch (choice) {
+             case 1:
+                 run_jeremy_simulator();
+                 break;
+             case 2:
+                 run_math_quiz();
+                 break;
+             case 3:
+                 run_guessing_game();
+                 break;
+             case 4:
+                 clear_screen();
+                 print(" thanks for playing - returning to os\n");
+                 delay_ms(500);
+                 reset();
+                 return; // not reached
+             default:
+                 beep(400, 70);
+                 print("\n invalid choice. press any key.\n");
+                 while (getch() < 0) { }
+                 break;
+         }
+     }
+ }
