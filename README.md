@@ -18,14 +18,14 @@ Example QEMU command: ```qemu-system-i386 -cdrom out/os.iso -hda [your image fil
 > Hard Disks are officially supported on real hardware, but experimental. Your data may be lost, and we are not liable for any lost data caused by Beacon.
 
 ### Screenshots
-![Starting Screen of BeaconOS](images/BeaconStart.png)
-The startup screen.
+![Starting Screen of BeaconOS](images/BeaconStart.png)  
+The startup screen.  
 
-![Main Screen of BeaconOS](images/BeaconMain.png)
-The Beacon Command Line Interface.
+![Main Screen of BeaconOS](images/BeaconMain.png)   
+The Beacon Command Line Interface.  
 
-![Game menu of BeaconOS](images/BeaconGames.png)
-The included games.
+![Game menu of BeaconOS](images/BeaconGames.png)  
+The included games.  
 
-![BeaconOS Cube](images/BeaconCube.png)
-A demo for math.c rendering a basic cube using text.
+![BeaconOS Cube](images/BeaconCube.png)   
+A demo for math.c rendering a basic cube using text.  
