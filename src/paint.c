@@ -6,11 +6,11 @@
  * paint.c
  */
 
-#include "os.h"
 #include "screen.h"
 #include "console.h"
 #include "keyboard.h"
 #include "stdlib.h"
+#include "command.h"
 #include <stdint.h>
 
 #define WIDTH 80
@@ -27,10 +27,11 @@ int cursor_y = HEIGHT / 2;
 uint8_t current_fg = 15;
 uint8_t current_bg = 0;
 mode_t current_mode = PEN;
+uint8_t cursor_color = 7;
 
 void draw_cursor() {
     gotoxy(cursor_x, cursor_y);
-    set_color(current_fg, current_bg);
+    set_color(cursor_color, current_bg);
     print(block);
 }
 
@@ -60,19 +61,24 @@ void clear_screen_art() {
     for (int y = 1; y < HEIGHT; y++) {
         gotoxy(0, y);
         for (int x = 0; x < WIDTH; x++) {
-            set_color(15, 15);
+            set_color(current_fg, current_fg);
             print(" ");
         }
     }
+
+    undraw_cursor();
 }
 
 void paint_main() {
     srand(extra_rand());
-    clear_screen();
+    clear_screen_art();
     disable_cursor();
     draw_help();
 
     while (1) {
+        if (cursor_color == current_fg) {
+            cursor_color -= 8;
+        }
         draw_cursor();
         int key = getch();
 
@@ -90,8 +96,10 @@ void paint_main() {
             case 'f': current_mode = FILL; fill_screen(); break;
             case 'c': current_mode = CLEAR; clear_screen_art(); break;
 
-            case ' ': start(); return;
+            case ' ': reset(); return;
         }
+
+        key = '\0';
 
         if (current_mode == PEN) {
             gotoxy(cursor_x, cursor_y);

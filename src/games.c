@@ -55,9 +55,6 @@
  // ───── shared helpers ───────────────────────────────────────────────────────
  static void read_line(char* buffer, size_t maxlen);
  static int  parse_int(const char* buf);
- static void beep_fail(void);
- static void beep_success(void);
- static void print_colored_header(void);
  static void clear_and_repaint(uint8_t fg, uint8_t bg);
  static void press_any_key_to_continue(void);
  
@@ -95,15 +92,9 @@
              }
              continue;
          }
-         // printable ascii range (space .. '~')
          if ((unsigned char)ch >= 0x20 && (unsigned char)ch <= 0x7e) {
              if (idx + 1 < maxlen) {
                  buffer[idx++] = (char)ch;
-                 // echo character
-                 curs_col++;
-                 char ebuf[2] = { (char)ch, '\0' };
-                 print(ebuf);
-                 update_cursor();
              }
          }
          // ignore other control characters
@@ -116,31 +107,6 @@
      return atoi(buf);
  }
  
- // a quick beep to signal failure (low pitch, short)
- static void beep_fail(void) {
-     beep(400, 70);
- }
- 
- // a quick beep to signal success (higher pitch)
- static void beep_success(void) {
-     beep(1200, 50);
- }
- 
- // print a colored header at the top of the screen.
- static void print_colored_header(void) {
-     gotoxy(0, 0);
-     set_color(2, 0); // light cyan on black
-     print("    ____                                 ______                         \n");
-     print("   / __ )___  ____ __________  ____     / ____/___ _____ ___  ___  _____\n");
-     print("  / __  / _ \\/ __ `/ ___/ __ \\/ __ \\   / / __/ __ `/ __ `__ \\/ _ \\/ ___/\n");
-     print(" / /_/ /  __/ /_/ / /__/ /_/ / / / /  / /_/ / /_/ / / / / / /  __(__  ) \n");
-     print("/_____/\\___/\\__,_/\\___/\\____/_/ /_/   \\____/\\__,_/_/ /_/ /_/\\___/____/  \n");
-     print("                                                                         \n");    
-     print("\n");
-     set_color(15, 0); // reset to white on black
-     print(" welcome to the beacon game collection!\n\n");
- }
- 
  // clear screen and repaint background to the given fg/bg.
  // for now, just clear_screen() suffices.
  static void clear_and_repaint(uint8_t fg, uint8_t bg) {
@@ -151,9 +117,7 @@
  // wait for one keypress before continuing
  static void press_any_key_to_continue(void) {
      print("\n press any key to return to menu...\n");
-     while (getch() < 0) {
-         // wait until a key is pressed
-     }
+     getch();
  }
  
  /*─────────────────────────────────────────────────────────────────────────────
@@ -166,7 +130,17 @@
  
      for (;;) {
          clear_and_repaint(15, 0);
-         print_colored_header();
+        gotoxy(0, 0);
+        set_color(2, 0); // light cyan on black
+        print("    ____                                 ______                         \n");
+        print("   / __ )___  ____ __________  ____     / ____/___ _____ ___  ___  _____\n");
+        print("  / __  / _ \\/ __ `/ ___/ __ \\/ __ \\   / / __/ __ `/ __ `__ \\/ _ \\/ ___/\n");
+        print(" / /_/ /  __/ /_/ / /__/ /_/ / / / /  / /_/ / /_/ / / / / / /  __(__  ) \n");
+        print("/_____/\\___/\\__,_/\\___/\\____/_/ /_/   \\____/\\__,_/_/ /_/ /_/\\___/____/  \n");
+        print("                                                                         \n");    
+        print("\n");
+        set_color(15, 0); // reset to white on black
+        print(" welcome to the beacon game collection!\n\n");
          // print menu options
          set_color(12, 0);  print("  1");     // red “1”
          set_color(15, 0);  print(". jeremy simulator\n");
@@ -201,7 +175,7 @@
                  reset();
                  return; // not reached
              default:
-                 beep_fail();
+                 beep(400, 70);
                  print("\n invalid choice. press any key.\n");
                  while (getch() < 0) { }
                  break;

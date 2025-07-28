@@ -635,7 +635,6 @@ void command_shell_loop() {
     cmd_len = 0;
     cmd_cursor = 0;
     accept_key_presses = 1;
-    command_line = 1;
 
     clear_screen();
     set_color(GREEN_COLOR, WHITE_COLOR);
@@ -654,8 +653,11 @@ void command_shell_loop() {
     curs_row = 2;
 
     input_col_offset = 0;
-    print_prompt();
+    update_cursor();
 
+    if (command_line) { return; }
+    command_line = 1;
+    print_prompt();
     update_cursor();
 
    while (command_line) {
