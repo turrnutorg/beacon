@@ -34,11 +34,6 @@ long long strtoll(const char* str, char** endptr, int base);
 unsigned long strtoul(const char* str, char** endptr, int base);
 unsigned long long strtoull(const char* str, char** endptr, int base);
 
-// ─── math helpers ───────────────────────────────────────────────────────────
-int abs(int x);
-long labs(long x);
-long long llabs(long long x);
-
 // ─── division results ───────────────────────────────────────────────────────
 typedef struct { int quot, rem; } div_t;
 typedef struct { long quot, rem; } ldiv_t;

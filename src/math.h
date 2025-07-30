@@ -13,7 +13,7 @@ typedef int32_t fixed_t;
 #define FIXED_TO_INT(f)   ((int)((f)>>16))
 
 // ─── fixed‑point math ───────────────────────────────────────────────────────
-fixed_t fabs(fixed_t x);
+fixed_t abs(fixed_t x);
 fixed_t sqrt(fixed_t x);
 fixed_t pow(fixed_t base, fixed_t exp);
 fixed_t exp(fixed_t x);
@@ -36,7 +36,7 @@ int     isnan(fixed_t x);
 int     isinf(fixed_t x);
 
 // ─── single‑precision float math ────────────────────────────────────────────
-float   fabsf(float x);
+float   absf(float x);
 float   sqrtf(float x);
 float   powf(float base, float exp);
 float   expf(float x);

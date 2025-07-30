@@ -15,7 +15,7 @@
  #include "disks.h"
  #include <stdint.h>
 
- int accept_key_presses = 1;
+ int accept_key_presses = 0;
  
  char input_buffer[INPUT_BUFFER_SIZE];
  size_t input_len = 0;

@@ -324,11 +324,6 @@ double atof(const char* str) {
     return sign * result;
 }
 
-// ─── math helpers ────────────────────────────────────────────────────────────
-int abs(int x) { return x < 0 ? -x : x; }
-long labs(long x) { return x < 0 ? -x : x; }
-long long llabs(long long x) { return x < 0 ? -x : x; }
-
 // ─── div results ─────────────────────────────────────────────────────────────
 div_t div(int n, int d) {
     div_t r = { n / d, n % d };
@@ -448,7 +443,3 @@ void printf(const char* format, ...) {
     va_end(args);
     print(buf);
 }
-
-// note: assumes a 'print(const char*)' from console.c or similar.
-
-// ─── eof ─────────────────────────────────────────────────────────────────────

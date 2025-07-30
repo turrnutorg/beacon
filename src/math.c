@@ -104,7 +104,7 @@ float powf(float base, float exp) {
 static inline fixed_t to_fixed(float v) { return (fixed_t)(v * FIXED_ONE); }
 static inline float    to_float(fixed_t v) { return (float)v / FIXED_ONE; }
 
-fixed_t fabs(fixed_t x)   { return x < 0 ? -x : x; }
+fixed_t abs(fixed_t x)   { return x < 0 ? -x : x; }
 fixed_t sqrt(fixed_t x)   { return to_fixed( sqrtf(to_float(x)) ); }
 fixed_t exp(fixed_t x)    { return to_fixed( expf(to_float(x)) ); }
 fixed_t log(fixed_t x)    { return to_fixed( logf(to_float(x)) ); }

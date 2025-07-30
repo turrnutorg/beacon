@@ -29,7 +29,6 @@ extern size_t curs_row;
 extern size_t curs_col;
 extern void* g_mb_info;
 extern void main_menu_loop(void);
-extern void cube_main(void);
 extern void paint_main(void);
 extern void bf(char input[]);
 int macos = 0; // macos mode
@@ -120,7 +119,7 @@ void process_command(const char* command) {
             }
         }
 
-    } else if (stricmp(cmd, "clear") == 0) {
+    } else if (stricmp(cmd, "clear") == 0 || stricmp(cmd, "cls") == 0) {
         clear_screen();
         gotoxy(0, 0);
         println("");
@@ -219,10 +218,9 @@ void process_command(const char* command) {
             println("BF <code> - The programming language of Brainfu-, I mean, boyfriend.");
             println("Games - Launch the game menu.");
             println("Poem - Display the Beacon poem.");
-            println("Cube - Render a basic 3D cube in the console.");
             println("Paint - Open Turrpaint.");
             println("macOS - This is not macOS. This command is pointless.");
-            curs_row += 7;
+            curs_row += 6;
             update_cursor();
         } else if (stricmp(args[0], "3") == 0) {
             println("Available system commands:");
@@ -286,8 +284,6 @@ void process_command(const char* command) {
                 println("RTC date updated.");
             }
         }
-    } else if (stricmp(cmd, "cube") == 0) {
-        cube_main();
     } else if (stricmp(cmd, "paint") == 0) {
         paint_main();
     } else if (stricmp(cmd, "time") == 0) {
@@ -339,7 +335,7 @@ void process_command(const char* command) {
     } else if (stricmp(cmd, "games") == 0) {
         main_menu_loop();
 
-    } else if (stricmp(cmd, "ls") == 0) {
+    } else if (stricmp(cmd, "ls") == 0 || stricmp(cmd, "dir") == 0) {
         if (arg_count == 0) {
             list_directory_with_paging(NULL);
         } else if (arg_count == 1) {

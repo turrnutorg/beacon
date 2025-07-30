@@ -1,8 +1,8 @@
-gccparams = -m32 -nostdlib -fno-builtin -fno-exceptions -fno-leading-underscore -ffreestanding
+gccparams = -m32 -nostdlib -fno-builtin -fno-exceptions -fno-leading-underscore -ffreestanding -mno-sse -mno-mmx
 asmparams = --32
 ldparams = -melf_i386 -s
 
-objs = obj/bf.o obj/boot.o obj/os.o obj/console.o obj/keyboard.o obj/keyboard_asm.o obj/port.o obj/screen.o obj/command.o obj/speaker.o obj/string.o obj/time.o obj/math.o obj/games.o obj/cube.o obj/paint.o obj/stdlib.o obj/ctype.o obj/ff.o obj/diskio.o obj/disks.o
+objs = obj/bf.o obj/boot.o obj/os.o obj/console.o obj/keyboard.o obj/keyboard_asm.o obj/port.o obj/screen.o obj/command.o obj/speaker.o obj/string.o obj/time.o obj/math.o obj/games.o obj/paint.o obj/stdlib.o obj/ctype.o obj/ff.o obj/diskio.o obj/disks.o
 
 compile: clean
 	mkdir out
@@ -22,7 +22,6 @@ compile: clean
 	gcc $(gccparams) -o obj/string.o -c src/string.c
 	gcc $(gccparams) -o obj/math.o -c src/math.c
 	gcc $(gccparams) -o obj/games.o -c src/games.c
-	gcc $(gccparams) -o obj/cube.o -c src/cube.c
 	gcc $(gccparams) -o obj/paint.o -c src/paint.c
 	gcc $(gccparams) -o obj/stdlib.o -c src/stdlib.c
 	gcc $(gccparams) -o obj/ctype.o -c src/ctype.c
@@ -35,7 +34,7 @@ compile: clean
 	grub-mkrescue --output=out/os.iso build
 
 run: compile
-	qemu-system-i386 -cdrom out/os.iso -boot d -serial pty
+	qemu-system-i386 -hda image.img -cdrom out/os.iso -boot d -serial pty
 
 clean:
 	rm -rf out

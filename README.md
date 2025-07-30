@@ -13,6 +13,8 @@ Example QEMU command: ```qemu-system-i386 -cdrom out/os.iso -hda [your image fil
 > [!IMPORTANT]
 > If a valid FAT32 image file / Hard Disk is not attached, the OS may not boot or throw an error. The drive must also be IDE/PATA, it cannot be SATA/AHCI.
 > It is also reccomended to use a burned CD/DVD, rather than a USB flash drive if attempting to boot on real hardware.
+> If you do not have an image file, there is a ZIP file containing an empty (formatted) 1 GB image. 
+> The makefile will automatically attempt to load said image when using ```make run```. If you do not edit the makefile or unzip the image, QEMU will not launch, as it will not be able to find the image.
 
 > [!NOTE]
 > Hard Disks are officially supported on real hardware, but experimental. Your data may be lost, and we are not liable for any lost data caused by Beacon.
@@ -26,6 +28,3 @@ The Beacon Command Line Interface.
 
 ![Game menu of BeaconOS](images/BeaconGames.png)  
 The included games.  
-
-![BeaconOS Cube](images/BeaconCube.png)   
-A demo for math.c rendering a basic cube using text.  

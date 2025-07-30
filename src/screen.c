@@ -73,7 +73,6 @@
      update_cursor();  // Update cursor position after the scroll
  }
  
- 
  void putchar(char c) {
      if (c == '\n') {
          curs_row++;
