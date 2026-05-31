@@ -1,7 +1,0 @@
-*.o
-*.bin
-*.iso
-
-.vscode/
-out/
-

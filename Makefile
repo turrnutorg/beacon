@@ -1,43 +1,40 @@
-gccparams = -m32 -nostdlib -fno-builtin -fno-exceptions -fno-leading-underscore -ffreestanding -mno-sse -mno-mmx
-asmparams = --32
-ldparams = -melf_i386 -s
+include config.mk
 
-objs = obj/bf.o obj/boot.o obj/os.o obj/console.o obj/cube.o obj/keyboard.o obj/keyboard_asm.o obj/port.o obj/screen.o obj/command.o obj/speaker.o obj/string.o obj/time.o obj/math.o obj/games.o obj/paint.o obj/stdlib.o obj/ctype.o obj/ff.o obj/diskio.o obj/disks.o
+compile: $(OS_ISO)
 
-compile: clean
-	mkdir out
-	mkdir obj
-	as $(asmparams) -o obj/boot.o src/boot.asm
-	as $(asmparams) -o obj/keyboard_asm.o src/keyboard.asm
+$(OS_ISO): $(OS_BIN)
+	cp $< build/boot/os.bin
+	grub-mkrescue --output=$@ build
 
-	gcc $(gccparams) -o obj/bf.o -c src/bf.c
-	gcc $(gccparams) -o obj/console.o -c src/console.c
-	gcc $(gccparams) -o obj/cube.o -c src/cube.c
-	gcc $(gccparams) -o obj/port.o -c src/port.c
-	gcc $(gccparams) -o obj/keyboard.o -c src/keyboard.c
-	gcc $(gccparams) -o obj/os.o -c src/os.c
-	gcc $(gccparams) -o obj/screen.o -c src/screen.c
-	gcc $(gccparams) -o obj/command.o -c src/command.c
-	gcc $(gccparams) -o obj/speaker.o -c src/speaker.c
-	gcc $(gccparams) -o obj/time.o -c src/time.c
-	gcc $(gccparams) -o obj/string.o -c src/string.c
-	gcc $(gccparams) -o obj/math.o -c src/math.c
-	gcc $(gccparams) -o obj/games.o -c src/games.c
-	gcc $(gccparams) -o obj/paint.o -c src/paint.c
-	gcc $(gccparams) -o obj/stdlib.o -c src/stdlib.c
-	gcc $(gccparams) -o obj/ctype.o -c src/ctype.c
-	gcc $(gccparams) -o obj/ff.o -c src/ff.c
-	gcc $(gccparams) -o obj/diskio.o -c src/diskio.c
-	gcc $(gccparams) -o obj/disks.o -c src/disks.c
+$(OS_BIN): $(OBJ_DIR)/blob.o $(ASM_OBJS)
+	$(LD) $(LD_FLAGS) -T link.ld -o $@ $^
 
-	ld $(ldparams) -T link.ld -o out/os.bin $(objs)
-	cp out/os.bin build/boot/os.bin
-	grub-mkrescue --output=out/os.iso build
+$(OBJ_DIR)/blob.o: build_c.mk
+	$(MAKE) -f $<
 
-run: compile
-	qemu-system-i386 -hda image.img -cdrom out/os.iso -boot d -serial pty
+# Make sure that the correct files are recompiled at header update
+build_c.mk: $(C_SRC) $(HEADERS)
+	rm -f $@
+	echo "$(OBJ_DIR)/blob.o: $(C_OBJS)" >> $@
+	echo "\t" $(LD) $(LD_FLAGS) $$^ "-r -o" $$\@ >> $@
+	echo >> $@
+	# Generate a rule for each source file
+	for file in $(C_SRC) ; do \
+		echo -n $(OBJ_DIR)/ >> $@; \
+		$(CC) $$file -MM -I $(SRC_DIR) >> $@; \
+		echo "\t" $(CC) $(C_FLAGS) -ffreestanding -c $$\< -I $(SRC_DIR) -o $$\@ >> $@; \
+		echo >> $@; \
+	done
+
+$(ASM_OBJS): $(OBJ_DIR)/%_asm.o: $(SRC_DIR)/%.asm
+	$(AS) $(AS_FLAGS) -o $@ $<
 
 clean:
-	rm -rf out
-	rm -rf obj
-	
+	rm -rf $(OBJ_DIR)/*.o
+	rm -rf $(OUT_DIR)/*.bin
+	rm -rf $(OUT_DIR)/*.iso
+	rm -f build_c.mk
+
+# We assume image.img already exists
+run: $(OS_ISO)
+	qemu-system-i386 -hda image.img -cdrom $(OS_ISO) -boot d -serial pty
